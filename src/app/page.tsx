@@ -31,6 +31,8 @@ export default function Home() {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [showRevision, setShowRevision] = useState(false);
+  const [revisionText, setRevisionText] = useState('');
 
   // Loading Cycle Logic
   useEffect(() => {
@@ -124,6 +126,47 @@ export default function Home() {
     } catch (error) {
       console.error(error);
       alert('Failed to generate image.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRevision = async () => {
+    if (!revisionText.trim() || !result?.prompt) return;
+
+    setLoading(true);
+    setImageLoaded(false);
+    setShowRevision(false);
+
+    try {
+      // Append revision instructions to additional details
+      const revisedDetails = details
+        ? `${details}\n\n**REVISION REQUEST:** ${revisionText}`
+        : `**REVISION REQUEST:** ${revisionText}`;
+
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          usage,
+          dimension,
+          subject,
+          additionalDetails: revisedDetails,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setResult({ imageUrl: data.imageUrl, prompt: data.prompt });
+        setRevisionText('');
+      } else {
+        alert('Error: ' + data.error);
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Failed to generate revised image.');
     } finally {
       setLoading(false);
     }
@@ -271,14 +314,46 @@ export default function Home() {
             </div>
 
             {result?.imageUrl && (
-              <button onClick={handleDownload} className={styles.secondaryButton}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="7 10 12 15 17 10"></polyline>
-                  <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                Download .PNG
-              </button>
+              <div className={styles.actionButtons}>
+                <button onClick={handleDownload} className={styles.secondaryButton}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                  Download
+                </button>
+                <button
+                  onClick={() => setShowRevision(!showRevision)}
+                  className={styles.secondaryButton}
+                  disabled={loading}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                  Revise
+                </button>
+              </div>
+            )}
+
+            {showRevision && result?.imageUrl && (
+              <div className={styles.revisionContainer}>
+                <textarea
+                  value={revisionText}
+                  onChange={(e) => setRevisionText(e.target.value)}
+                  placeholder="Describe what changes you want... (e.g., 'Make it more blue', 'Add more data streams', 'Remove the cloud logo')"
+                  rows={3}
+                  className={styles.textarea}
+                />
+                <button
+                  onClick={handleRevision}
+                  className={styles.button}
+                  disabled={loading || !revisionText.trim()}
+                >
+                  {loading ? 'Generating...' : 'Generate Revision'}
+                </button>
+              </div>
             )}
           </section>
 
