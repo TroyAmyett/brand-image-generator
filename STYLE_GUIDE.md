@@ -6,7 +6,7 @@
 - **Mood:** High-tech, professional yet sci-fi – holographic, glowing, quantum-inspired. Hyper-realistic but slightly surreal.
 - **Background:** Dark (black or deep navy) with high-tech digital grid patterns, subtle circuit boards, or infinite depth.
 - **Lighting:** Cinematic volumetric god rays, depth-of-field bokeh lights, inner glows on elements.
-- **Materials:** Translucent glass-like holograms, glowing edges, microchip traces visible inside objects.
+- **Materials:** Translucent glass-like holograms, glowing edges.
 - **Render Style:** Ultra-detailed 8K, high-end digital (e.g., Octane Render or Redshift) – sharp, vibrant, professional.
 
 **Color Palette**
@@ -22,3 +22,10 @@
 - **Icons/Symbols:** Gears (optimization), lightbulb (advisory), neural nodes/AI brains, shields (security), upward graphs (performance), data streams.
 - **Dynamics:** Flowing green/blue data streams, pulsating energy, holographic projections floating in space.
 - **Framing:** Rectangular cards with rounded corners and neon borders (AppExchange-style) for service pages; full-bleed for hero images.
+
+**Do's and Don'ts**
+
+- Do: Keep dark backgrounds, vibrant neons, holographic transparency.
+- Do: Incorporate Salesforce cloud motif where possible.
+- Don't: Use bright/daylight themes, flat designs, or non-neon colors.
+- Don't: Overload with text – prefer clean versions for flexibility.

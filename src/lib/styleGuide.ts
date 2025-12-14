@@ -6,7 +6,7 @@ export const STYLE_GUIDE = `
 - **Mood:** High-tech, professional yet sci-fi – holographic, glowing, quantum-inspired. Hyper-realistic but slightly surreal.
 - **Background:** Dark (black or deep navy) with high-tech digital grid patterns, subtle circuit boards, or infinite depth.
 - **Lighting:** Cinematic volumetric god rays, depth-of-field bokeh lights, inner glows on elements.
-- **Materials:** Translucent glass-like holograms, glowing edges, microchip traces visible inside objects.
+- **Materials:** Translucent glass-like holograms, glowing edges.
 - **Render Style:** Ultra-detailed 8K, high-end digital (e.g., Octane Render or Redshift) – sharp, vibrant, professional.
 
 **Color Palette**
