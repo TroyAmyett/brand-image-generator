@@ -1,0 +1,48 @@
+:root {
+  --background: #0a192f;
+  --foreground: #cbd5e1;
+  --primary: #64ffda;
+  --primary-hover: #4cdbb9;
+  --secondary: #112240;
+  --card-bg: #1e293b;
+  --border: #334155;
+  --font-mono: ui-monospace, Menlo, Monaco, "Cascadia Mono", "Segoe UI Mono",
+    "Roboto Mono", "Oxygen Mono", "Ubuntu Monospace", "Source Code Pro",
+    "Fira Mono", "Droid Sans Mono", "Courier New", monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  font-family: var(--font-sans);
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--background); 
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border); 
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary); 
+}
