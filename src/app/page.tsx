@@ -30,6 +30,7 @@ export default function Home() {
   const [result, setResult] = useState<{ imageUrl: string; prompt: string } | null>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   // Loading Cycle Logic
   useEffect(() => {
@@ -226,7 +227,12 @@ export default function Home() {
             <div className={styles.resultContainer} style={{ marginBottom: result?.imageUrl ? '1rem' : 0 }}>
               {result?.imageUrl ? (
                 <>
-                  <div className={`${styles.imageWrapper} ${imageLoaded ? styles.loaded : ''}`}>
+                  <div
+                    className={`${styles.imageWrapper} ${imageLoaded ? styles.loaded : ''}`}
+                    onClick={() => setShowPreview(true)}
+                    style={{ cursor: 'pointer' }}
+                    title="Click to preview full size"
+                  >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={result.imageUrl}
@@ -313,6 +319,32 @@ export default function Home() {
           <p className={styles.versionTag}>{APP_VERSION}</p>
         </footer>
       </div>
+
+      {/* Image Preview Modal */}
+      {showPreview && result?.imageUrl && (
+        <div className={styles.modal} onClick={() => setShowPreview(false)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <button className={styles.modalClose} onClick={() => setShowPreview(false)}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={result.imageUrl} alt={subject} className={styles.modalImage} />
+            <div className={styles.modalActions}>
+              <button onClick={handleDownload} className={styles.button}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '0.5rem' }}>
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Download .PNG
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
