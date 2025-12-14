@@ -19,7 +19,7 @@
 **Key Elements & Compositions**
 
 - **Central Focus:** Often a holographic Salesforce cloud logo, neural network core, dashboard interface, or agent nodes.
-- **Icons/Symbols:** Gears (optimization), lightbulb (advisory), neural nodes/AI brains, shields (security), upward graphs (performance), data streams.
+- **Icons/Symbols:** Neural network nodes, interlinked AI brains (Agent-to-Agent), abstract MCP server blocks, data pipelines, infinite loops (feedback), floating API connectors. Avoid generic gears or lightbulbs.
 - **Dynamics:** Flowing green/blue data streams, pulsating energy, holographic projections floating in space.
 - **Framing:** Rectangular cards with rounded corners and neon borders (AppExchange-style) for service pages; full-bleed for hero images.
 

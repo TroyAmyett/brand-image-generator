@@ -16,6 +16,12 @@ export function generatePrompt(params: GenerateImageParams): string {
     return `
 *** IMAGE GENERATION PROMPT ***
 
+**CRITICAL RULE: NO TEXT. NO LABELS. NO WORDS.**
+- The image must differ from a standard marketing slide.
+- Do NOT include captions, titles, or descriptions under icons or elements.
+- Use ONLY abstract symbols, glowing geometric shapes, and data visualization elements.
+- If a "card" or "interface" is shown, it must be purely visual/abstract with NO written content.
+
 **CONTEXT:**
 Generate a high-quality website image.
 
@@ -36,13 +42,7 @@ ${additionalDetails}
 1. Create a visually striking image that fits the "Usage Context" and "Subject".
 2. **Prioritize the "PRIORITY OVERRIDES" section above general style guide rules if there is a conflict.**
 3. Ensure the color palette and mood align perfectly with the "Style Guide".
-4. Compose the image to allow for text overlay if applicable.
+4. Compose the image to allow for text overlay if applicable (leave negative space).
 5. High resolution, photorealistic or high-fidelity 3D render style.
-
-**NEGATIVE CONSTRAINTS (CRITICAL):**
-- **NO TEXT, NO LETTERS, NO NUMBERS, NO LABELS.**
-- Do NOT attempt to write "Salesforce" or any other words on screens/dashboards (except the main logo if requested).
-- Replace all potential text areas with abstract data bars, glowing lines, or geometric shapes.
-- The interface elements should be strictly iconographic and abstract.
 `;
 }
