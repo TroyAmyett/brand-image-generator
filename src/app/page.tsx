@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styles from './page.module.css';
 
 const USAGE_OPTIONS = [
@@ -25,7 +25,30 @@ export default function Home() {
   const [subject, setSubject] = useState('');
   const [details, setDetails] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loadingText, setLoadingText] = useState('Initializing...');
   const [result, setResult] = useState<{ imageUrl: string; prompt: string } | null>(null);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  // Loading Cycle Logic
+  useEffect(() => {
+    if (!loading) return;
+    const texts = [
+      'Reading Style Guide...',
+      'Analyzing Brand Colors...',
+      'Constructing Prompt...',
+      'Optimizing for DALL-E 3...',
+      'Painting Pixels...',
+      'Finalizing Assets...'
+    ];
+    let i = 0;
+    setLoadingText(texts[0]);
+    const interval = setInterval(() => {
+      i = (i + 1) % texts.length;
+      setLoadingText(texts[i]);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [loading]);
 
   const handleDownload = async () => {
     if (!result?.imageUrl) return;
@@ -39,7 +62,14 @@ export default function Home() {
         .replace(/(^-|-$)/g, '')     // Remove leading/trailing hyphens
         + '.png';
 
-      const response = await fetch(result.imageUrl);
+      const response = await fetch('/api/download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl: result.imageUrl })
+      });
+
+      if (!response.ok) throw new Error('Download failed');
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -51,15 +81,23 @@ export default function Home() {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Download failed:', error);
-      // Fallback: just open in new tab if fetch fails (e.g. CORS)
+      // Fallback: just open in new tab if fetch fails
       window.open(result.imageUrl, '_blank');
     }
+  };
+
+  const handleCopyPrompt = () => {
+    if (!result?.prompt) return;
+    navigator.clipboard.writeText(result.prompt);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setResult(null);
+    setImageLoaded(false);
 
     try {
       const response = await fetch('/api/generate', {
@@ -186,12 +224,23 @@ export default function Home() {
 
             <div className={styles.resultContainer} style={{ marginBottom: result?.imageUrl ? '1rem' : 0 }}>
               {result?.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={result.imageUrl}
-                  alt={subject}
-                  className={styles.imageResult}
-                />
+                <>
+                  <div className={`${styles.imageWrapper} ${imageLoaded ? styles.loaded : ''}`}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={result.imageUrl}
+                      alt={subject}
+                      className={styles.imageResult}
+                      onLoad={() => setImageLoaded(true)}
+                    />
+                  </div>
+                  {!imageLoaded && (
+                    <div className={styles.loadingOverlay}>
+                      <div className={styles.spinner}></div>
+                      <p>Loading Image...</p>
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className={styles.placeholder}>
                   {!loading && (
@@ -207,7 +256,7 @@ export default function Home() {
                   {loading && (
                     <>
                       <div className={styles.spinner}></div>
-                      <p style={{ color: 'var(--primary)' }}>Constructing & Rendering...</p>
+                      <p className={styles.loadingText}>{loadingText}</p>
                     </>
                   )}
                 </div>
@@ -228,10 +277,21 @@ export default function Home() {
 
           {/* Card 3: Exact Prompt */}
           <section className={styles.card}>
-            <h2 className={styles.cardHeader}>
-              <span className={styles.stepNumber}>3</span>
-              Prompt Data
-            </h2>
+            <div className={styles.cardHeader} style={{ justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <span className={styles.stepNumber}>3</span>
+                Prompt Data
+              </div>
+              {result?.prompt && (
+                <button onClick={handleCopyPrompt} className={styles.copyButton} title="Copy to Clipboard">
+                  {copied ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                  )}
+                </button>
+              )}
+            </div>
 
             <div className={styles.promptContainer}>
               {result?.prompt ? (
