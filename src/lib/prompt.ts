@@ -16,33 +16,29 @@ export function generatePrompt(params: GenerateImageParams): string {
     return `
 *** IMAGE GENERATION PROMPT ***
 
-**CRITICAL RULE: NO TEXT. NO LABELS. NO WORDS.**
-- The image must differ from a standard marketing slide.
-- Do NOT include captions, titles, or descriptions under icons or elements.
-- Use ONLY abstract symbols, glowing geometric shapes, and data visualization elements.
-- If a "card" or "interface" is shown, it must be purely visual/abstract with NO written content.
+**CRITICAL RULES (MUST FOLLOW):**
+1. NO TEXT. NO LABELS. NO WORDS. NO LETTERS. The image must be purely visual.
+2. Use ONLY abstract symbols, glowing geometric shapes, and data visualization elements.
 
-**CONTEXT:**
-Generate a high-quality website image.
-
-**STYLE GUIDE (STRICTLY ADHERE):**
-${STYLE_GUIDE}
-
-**SPECIFICATIONS:**
-- **Usage Context:** ${usage}
-- **Dimensions/Aspect Ratio:** ${dimension}
-- **Subject/Topic:** ${subject}
+**WHAT TO CREATE:**
+- **Subject:** ${subject}
+- **Usage:** ${usage}
+- **Aspect Ratio:** ${dimension}
 
 ${additionalDetails ? `
-**PRIORITY OVERRIDES & DETAILS (MOST IMPORTANT):**
+**USER'S SPECIFIC REQUIREMENTS (HIGHEST PRIORITY - YOU MUST FOLLOW THESE):**
 ${additionalDetails}
+
+The above requirements from the user take precedence over all other guidelines below. If the user's requirements conflict with the style guide, FOLLOW THE USER'S REQUIREMENTS.
 ` : ''}
 
-**INSTRUCTIONS:**
-1. Create a visually striking image that fits the "Usage Context" and "Subject".
-2. **Prioritize the "PRIORITY OVERRIDES" section above general style guide rules if there is a conflict.**
-3. Ensure the color palette and mood align perfectly with the "Style Guide".
-4. Compose the image to allow for text overlay if applicable (leave negative space).
-5. High resolution, photorealistic or high-fidelity 3D render style.
+**VISUAL STYLE REFERENCE:**
+${STYLE_GUIDE}
+
+**FINAL CHECKLIST:**
+- Did you incorporate the user's specific requirements above? (If provided, this is mandatory)
+- No text, labels, or words anywhere in the image?
+- High-resolution, professional quality render?
+- Dark background with blue/green primary colors, purple as accent?
 `;
 }
