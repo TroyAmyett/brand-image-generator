@@ -17,7 +17,7 @@ export function generatePrompt(params: GenerateImageParams): string {
 *** IMAGE GENERATION PROMPT ***
 
 **CONTEXT:**
-Generate a high-quality website image based on the following specifications.
+Generate a high-quality website image.
 
 **STYLE GUIDE (STRICTLY ADHERE):**
 ${STYLE_GUIDE}
@@ -26,13 +26,23 @@ ${STYLE_GUIDE}
 - **Usage Context:** ${usage}
 - **Dimensions/Aspect Ratio:** ${dimension}
 - **Subject/Topic:** ${subject}
-${additionalDetails ? `- **Additional Details:** ${additionalDetails}` : ''}
+
+${additionalDetails ? `
+**PRIORITY OVERRIDES & DETAILS (MOST IMPORTANT):**
+${additionalDetails}
+` : ''}
 
 **INSTRUCTIONS:**
 1. Create a visually striking image that fits the "Usage Context" and "Subject".
-2. Ensure the color palette and mood align perfectly with the "Style Guide".
-3. Compose the image to allow for text overlay if applicable (especially for Hero/Background).
-4. Do not include text inside the image unless it's a logo or specified.
-5. High resolution, photorealistic or high-fidelity 3D render style as per guide.
+2. **Prioritize the "PRIORITY OVERRIDES" section above general style guide rules if there is a conflict.**
+3. Ensure the color palette and mood align perfectly with the "Style Guide".
+4. Compose the image to allow for text overlay if applicable.
+5. High resolution, photorealistic or high-fidelity 3D render style.
+
+**NEGATIVE CONSTRAINTS (CRITICAL):**
+- **NO TEXT, NO LETTERS, NO NUMBERS, NO LABELS.**
+- Do NOT attempt to write "Salesforce" or any other words on screens/dashboards (except the main logo if requested).
+- Replace all potential text areas with abstract data bars, glowing lines, or geometric shapes.
+- The interface elements should be strictly iconographic and abstract.
 `;
 }

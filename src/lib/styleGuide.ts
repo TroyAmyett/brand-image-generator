@@ -20,4 +20,10 @@ export const STYLE_GUIDE = `
 - **Icons/Symbols:** Gears (optimization), lightbulb (advisory), neural nodes/AI brains, shields (security), upward graphs (performance), data streams.
 - **Dynamics:** Flowing green/blue data streams, pulsating energy, holographic projections floating in space.
 - **Framing:** Rectangular cards with rounded corners and neon borders (AppExchange-style) for service pages; full-bleed for hero images.
+
+**Do's and Don'ts**
+- Do: Keep dark backgrounds, vibrant neons, holographic transparency.
+- Do: Incorporate Salesforce cloud motif where possible.
+- Don't: Use bright/daylight themes, flat designs, or non-neon colors.
+- Don't: Overload with text – prefer clean versions for flexibility.
 `;

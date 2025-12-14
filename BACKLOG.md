@@ -12,6 +12,8 @@
 ## 🧊 Icebox (Ideas/Future)
 
 - [ ] **Ingest Style Guide**: Settings feature to upload an image or URL and automatically generate a custom Style Guide.
+- [ ] **Upload Example Image**: Frontend option to upload an image as a base/reference for generation (Image-to-Image).
+- [ ] **Image Revision**: Allow user to refine/revise a generated image by providing additional text instructions.
 - [ ] **User Settings (Style Guide)**: Allow users to enter/customize their own style guide for generation.
 - [ ] **User Settings (Image Generator APIs)**: Support multiple providers (OpenAI, Midjourney, etc) with a dropdown selector (Default: OpenAI).
 - [ ] **User Authentication**: Allow users to save their generated images.
