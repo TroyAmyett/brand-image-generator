@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import styles from './page.module.css';
+import { APP_VERSION } from '@/lib/version';
 
 const USAGE_OPTIONS = [
   'Hero Background',
@@ -309,6 +310,7 @@ export default function Home() {
 
         <footer className={styles.footer}>
           <p>API Endpoint for Automations (Make.com): <code className={styles.code}>POST /api/generate</code></p>
+          <p className={styles.versionTag}>{APP_VERSION}</p>
         </footer>
       </div>
     </main>
