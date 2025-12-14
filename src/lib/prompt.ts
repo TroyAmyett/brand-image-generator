@@ -13,32 +13,23 @@ export interface GenerateImageParams {
 export function generatePrompt(params: GenerateImageParams): string {
     const { usage, dimension, subject, additionalDetails } = params;
 
+    // Build the core visual description
+    const coreDescription = additionalDetails
+        ? `${subject}. IMPORTANT DETAIL: ${additionalDetails}`
+        : subject;
+
     return `
-*** IMAGE GENERATION PROMPT ***
+Create a high-quality ${dimension} image for a ${usage}.
 
-**CRITICAL RULES (MUST FOLLOW):**
-1. NO TEXT. NO LABELS. NO WORDS. NO LETTERS. The image must be purely visual.
-2. Use ONLY abstract symbols, glowing geometric shapes, and data visualization elements.
+**THE IMAGE MUST SHOW:** ${coreDescription}
 
-**WHAT TO CREATE:**
-- **Subject:** ${subject}
-- **Usage:** ${usage}
-- **Aspect Ratio:** ${dimension}
+**MANDATORY RULES:**
+- NO TEXT, LABELS, WORDS, OR LETTERS anywhere in the image.
+- Use abstract symbols and data visualization elements only.
 
-${additionalDetails ? `
-**USER'S SPECIFIC REQUIREMENTS (HIGHEST PRIORITY - YOU MUST FOLLOW THESE):**
-${additionalDetails}
-
-The above requirements from the user take precedence over all other guidelines below. If the user's requirements conflict with the style guide, FOLLOW THE USER'S REQUIREMENTS.
-` : ''}
-
-**VISUAL STYLE REFERENCE:**
+**VISUAL STYLE:**
 ${STYLE_GUIDE}
 
-**FINAL CHECKLIST:**
-- Did you incorporate the user's specific requirements above? (If provided, this is mandatory)
-- No text, labels, or words anywhere in the image?
-- High-resolution, professional quality render?
-- Dark background with blue/green primary colors, purple as accent?
+**REMEMBER: The image MUST depict "${coreDescription}" - this is the primary requirement. Everything else is secondary.**
 `;
 }
