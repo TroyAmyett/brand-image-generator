@@ -10,9 +10,9 @@ export const STYLE_GUIDE = `
 - **Render Style:** Ultra-detailed 8K, high-end digital – sharp, vibrant, professional.
 
 **Color Palette**
-- **Primary Colors:** **Electric Cyan / Blue** (#00FFFF, #0070F3) and **Neon/Lime Green** (#39FF14, #00FF88). These are the ONLY primary accent colors.
-- **Accents:** Purple may be used sparingly for very deep shadows or subtle depth. Do NOT use purple as a primary or secondary color.
-- **FORBIDDEN as primary colors:** Pink, magenta, orange, yellow.
+- **Primary Colors:** **Electric Cyan / Blue** (#00FFFF, #0070F3) and **Neon/Lime Green** (#39FF14, #00FF88). These are the dominant accent colors.
+- **Tertiary Color:** Purple/Violet may be used as a subtle third color for variety, glows, or background accents. Keep it secondary to blue and green.
+- **FORBIDDEN:** Pink, magenta, orange, yellow as prominent colors.
 - **Base:** Dark background (#000000 to #0A0A1F) to make the Blue and Green pop.
 - **Text/Overlays (if any):** Clean white with subtle cyan glow.
 
@@ -23,9 +23,9 @@ export const STYLE_GUIDE = `
 - **Framing:** Rectangular cards with rounded corners and neon borders for service pages; full-bleed for hero images.
 
 **Do's and Don'ts**
-- Do: Keep dark backgrounds, vibrant blues and greens only, holographic transparency.
+- Do: Keep dark backgrounds, vibrant blues and greens as primary, with purple as a subtle third color.
 - Do: Focus on cloud, software, data, AI themes.
-- Don't: Use purple, pink, or warm colors as dominant colors.
+- Don't: Use pink, magenta, orange, or yellow as prominent colors.
 - Don't: Show circuit boards, microchips, or hardware elements.
 - Don't: Overload with text – prefer clean versions for flexibility.
 `;
