@@ -13,28 +13,37 @@ export interface GenerateImageParams {
 export function generatePrompt(params: GenerateImageParams): string {
     const { usage, dimension, subject, additionalDetails } = params;
 
-    // Minimal style hints - just colors and mood
-    const styleHints = `
-Style: Futuristic, high-tech, cloud software aesthetic. 
-Colors: Electric cyan/blue and neon green as primary, purple as subtle accent. Dark background.
-Quality: Ultra-detailed 8K render, professional.
-IMPORTANT: NO text, labels, or words in the image.`.trim();
+    // Visual translation guidance - helps DALL-E understand abstract concepts
+    const visualGuidance = `
+Visual representation guide:
+- "AI Agents" = glowing humanoid robot silhouettes or circular node icons with brain symbols
+- "Data flows" = flowing streams of glowing particles or light beams connecting elements
+- "Salesforce" = the Salesforce cloud logo as a central glowing hologram
+- "Applications/Apps" = floating rectangular app icons or window frames
+- "Integration" = connected nodes with flowing lines between them
+- "Revenue/Growth" = upward trending graphs or ascending arrows
+- "Automation" = gears, circuits, or robotic elements
+`.trim();
 
-    // Build the main description - user's input is the PRIMARY focus
-    let mainDescription = subject;
+    // Build the visual scene description
+    let sceneDescription = `The scene should visually represent: "${subject}"`;
     if (additionalDetails) {
-        mainDescription = `${subject}. 
-        
-Specific visual requirement: ${additionalDetails}
+        sceneDescription += `
 
-You MUST incorporate the above specific visual requirement into the image. This is not optional.`;
+The user specifically wants to see: "${additionalDetails}"
+
+Translate these concepts into visible elements using the visual guide above.`;
     }
 
     return `
-Create a ${dimension} ${usage} image.
+Create a ${dimension} ${usage} illustration.
 
-WHAT TO SHOW: ${mainDescription}
+${sceneDescription}
 
-${styleHints}
+${visualGuidance}
+
+Style: Futuristic holographic aesthetic on dark background. Electric cyan and neon green glows. Purple as subtle accent. Ultra-detailed, professional quality.
+
+Critical: NO text, words, or labels anywhere in the image. Use only visual symbols and abstract elements.
 `;
 }
