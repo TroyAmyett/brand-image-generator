@@ -18,47 +18,54 @@ export function generatePrompt(params: GenerateImageParams): string {
     const isArchitecture = /architecture|platform|engine|infrastructure|system/i.test(subject);
     const isSequential = /step|process|flow|workflow|stage|roadmap/i.test(subject);
 
-    // 1. Core Visual Metaphor
+    // 1. Core Visual Metaphor - Anchored in Salesforce 2025 "Cosmos" and "Atlas" branding
     let compositionStyle = "";
     if (isArchitecture) {
-        compositionStyle = `The composition should be a 3D isometric visualization of software architecture. 
-Central focus: A brilliant "Reasoning Core" (Atlas Engine) shown as a glowing holographic brain-like sphere of light. 
-Surrounding elements: Floating glass UI panels representing Data Cloud, CRM, and Orchestration, all connected to the core by pulsing channels of neon light.`;
+        compositionStyle = `The composition is a high-tech 3D software visualization (Salesforce Cosmos Style).
+- CENTRAL CORE: A luminous, multi-layered holographic sphere representing the "Atlas Reasoning Engine". It is made of pure light and neural energy filaments.
+- FLOATING INTERFACE: Surrounding the core are floating, semi-transparent (Glassmorphism) UI panels with smooth rounded corners.
+- DATA CONNECTIVITY: These panels are connected to the core by flowing "liquid light" streams and glowing fiber-optic paths.
+- DEFINITELY NO hardware, NO circuit boards, NO chips, NO pedestals. All elements are weightless and suspended.`;
     } else if (isSequential) {
-        compositionStyle = `The layout follows a clear horizontal path (Left-to-Right).
-It depicts a "Data Journey" where information travels through a series of glowing glass portals, each representing a distinct stage of completion.`;
+        compositionStyle = `The layout is a linear, Left-to-Right "Data Journey".
+- STAGES: Represent steps as a series of glowing glass "Stage Portals" or "UI Tiles" with rounded corners.
+- PROGRESSION: A single, continuous stream of liquid light flows through each stage, representing a smooth business process.
+- Avoid branching or chaotic paths. Clear, professional workflow visualization.`;
     } else {
-        compositionStyle = `A balanced, elegant 3D composition focused on ${subject}. Everything is suspended in weightless space, interconnected by subtle energy streams.`;
+        compositionStyle = `A sleek, modern 3D visualization focused on ${subject}.
+- Use floating glass panels and glowing spherical nodes to represent data and people.
+- Everything is clean, uncluttered, and professional.`;
     }
 
-    // 2. Branded Symbol Translation
-    const agentforceContext = /agentforce/i.test(subject) ?
-        "Visualizing Agentforce: Depict autonomous agents as glowing neural orbs that appear intelligent and reactive, integrated into the Salesforce ecosystem." : "";
+    // 2. Branded Symbol Translation (Agentforce Era)
+    const agentContext = /agentforce|agent/i.test(subject) ?
+        "Visualizing Agents: Depict autonomous agents as elegant, glowing energy nodes (circular, no robots) that orbit the central architecture like intelligent satellites." : "";
 
     // 3. User Exclusions/Details
-    const userExclusions = additionalDetails ? `\n\n**CRITICAL INSTRUCTION:** ${additionalDetails}` : "";
+    const userExclusions = additionalDetails ? `\n\n**CRITICAL USER INSTRUCTION:** ${additionalDetails}` : "";
 
     return `
-Generate a professional, high-end ${dimension} ${usage} for a Salesforce consulting website.
+Create a professional ${dimension} ${usage} for a Salesforce high-end technical website.
 
-SUBJECT: ${subject}
+PRIMARY TOPIC: "${subject}"
 
 SCENE DESCRIPTION:
 ${compositionStyle}
-${agentforceContext}
-Use the Salesforce cloud logo as a subtle, translucent holographic watermark or secondary visual element to ground the brand.
+${agentContext}
 
-STYLE & AESTHETIC:
-- BACKGROUND: Pure infinite black void. No ground, no horizon, no physical floors.
-- LIGHTING: Atmospheric volumetric glows. Use Electric Cyan (#00FFFF) and Neon Green (#39FF14) as the light sources.
-- MATERIALS: Glassmorphism—frosted glass panels, liquid light beams, and crystalline nodes. 
-- VIBE: Modern, cloud-native, sophisticated software. 
+# VISUAL AESTHETIC (STRICT):
+- THEME: Salesforce 2025 "Cosmos" UI design. Clean, rounded, elegant, cloud-native.
+- BACKGROUND: Deep, absolute infinite black void. No ground, no floors, no physical bases.
+- COLORS: High-contrast Electric Cyan (#00FFFF) and Vibrant Lime Green (#39FF14). Ambient violet glows for depth.
+- MATERIALS: Frosted glass, translucent panels, liquid light, bokeh particles. 
 
-FORBIDDEN (DO NOT INCLUDE):
-- NO physical hardware, NO circuit boards, NO green PCB textures, No wires, NO robots, NO people, NO text/labels.
+# FORBIDDEN (CRITICAL):
+- NO TEXT: Do not include ANY words, letters, labels, or gibberish characters in the image.
+- NO HARDWARE: Absolutely no circuit boards, no motherboards, no computer chips, no wires, no metal, no pedestals.
+- NO ROBOTS: No humanoid shapes or robotic elements unless specifically requested.
 
 ${userExclusions}
 
-Final Output: 8K Octane Render, sharp focus, cinematic depth of field.
+Quality: 8K Octane Render, sharp crystalline focus, clean professional finish.
 `;
 }
