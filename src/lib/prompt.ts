@@ -24,6 +24,7 @@ export function generatePrompt(params: GenerateImageParams): string {
 - "Integration" = interlinked nodes with high-speed energy connections.
 - "Growth" = ascending data streams or expanding glowing horizons.
 - "Automation" = pulsating energy cores or orchestrated data movement.
+- "Workflow/Process" = A sequential series of glowing glass panels or nodes arranged in a clear directional path (left-to-right or cascading).
 `.trim();
 
     // Scene Composition Rules
@@ -31,6 +32,7 @@ export function generatePrompt(params: GenerateImageParams): string {
 # COMPOSITION RULES:
 - NARRATIVE PRIORITY: The image must first and foremost depict the core subject: "${subject}".
 - PLURALITY: If the subject involves a "team", "group", "multiple", or "network", ensure the composition features MANY distinct elements or entities interacting. Do not just center a single object.
+- SEQUENTIALITY: For subjects involving "Workflow", "Steps", "Process", or "Stages", use a directional layout (typically left-to-right) that implies progress and chronological flow. Avoid chaotic branching that looks like a circuit.
 - DENSITY: Populating the scene with a rich variety of symbols from the library below is encouraged to show "scale" and "complexity".
 `.trim();
 
