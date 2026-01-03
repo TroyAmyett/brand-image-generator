@@ -14,57 +14,51 @@ export interface GenerateImageParams {
 export function generatePrompt(params: GenerateImageParams): string {
     const { usage, dimension, subject, additionalDetails } = params;
 
-    // Detection for sequential topics
-    const isSequential = /step|process|flow|workflow|stage|roadmap|journey/i.test(subject);
+    // Sub-topic detection for specialized compositions
+    const isArchitecture = /architecture|platform|engine|infrastructure|system/i.test(subject);
+    const isSequential = /step|process|flow|workflow|stage|roadmap/i.test(subject);
 
-    // Visual translation guidance - helps DALL-E understand abstract concepts in a cloud-native way
-    const symbolLibrary = `
-# VISUAL SYMBOLS (STRICT ADHERENCE):
-- "Agentforce" = Orchestrated clusters of autonomous glowing spheres floating in an infinite void.
-- "AI Agents" = Spherical nodes of liquid energy with internal neural filaments.
-- "Data flows" = Sinuous, organic streams of liquid light and glowing particles connecting elements.
-- "Architecture/Platform" = A high-speed network of floating translucent glass panels and energetic nodes.
-- "Salesforce" = A glowing, semi-transparent prism-like cloud logo floating in the center.
-- "Steps/Process" = A sequence of glass portals or floating stage panels arranged in a clear path.
-`.trim();
-
-    // Specific logic for linear/sequential subjects
-    const sequentialGuidance = isSequential ? `
-# COMPOSITION: SEQUENTIAL FLOW
-- The layout is a linear, directional progression (typically Left-to-Right).
-- Avoid centered, circular, or pedestal-based compositions.
-- Use a wide, panoramic view to show a "Data Journey" through multiple stages.
-` : `
-# COMPOSITION: NETWORK ECOSYSTEM
-- A dynamic, three-dimensional network of floating elements.
-- Avoid physical structures, pedestals, or bases.
-- Everything should feel weightless and suspended in deep space.
-`;
-
-    // Build the visual scene description
-    let userInstructions = "";
-    if (additionalDetails) {
-        userInstructions = `\n\n**USER SPECIFIC INSTRUCTIONS:** ${additionalDetails}\n(Strictly follow these. If "No robots" is specified, use only abstract nodes.)`;
+    // 1. Core Visual Metaphor
+    let compositionStyle = "";
+    if (isArchitecture) {
+        compositionStyle = `The composition should be a 3D isometric visualization of software architecture. 
+Central focus: A brilliant "Reasoning Core" (Atlas Engine) shown as a glowing holographic brain-like sphere of light. 
+Surrounding elements: Floating glass UI panels representing Data Cloud, CRM, and Orchestration, all connected to the core by pulsing channels of neon light.`;
+    } else if (isSequential) {
+        compositionStyle = `The layout follows a clear horizontal path (Left-to-Right).
+It depicts a "Data Journey" where information travels through a series of glowing glass portals, each representing a distinct stage of completion.`;
+    } else {
+        compositionStyle = `A balanced, elegant 3D composition focused on ${subject}. Everything is suspended in weightless space, interconnected by subtle energy streams.`;
     }
 
+    // 2. Branded Symbol Translation
+    const agentforceContext = /agentforce/i.test(subject) ?
+        "Visualizing Agentforce: Depict autonomous agents as glowing neural orbs that appear intelligent and reactive, integrated into the Salesforce ecosystem." : "";
+
+    // 3. User Exclusions/Details
+    const userExclusions = additionalDetails ? `\n\n**CRITICAL INSTRUCTION:** ${additionalDetails}` : "";
+
     return `
-Create a ${dimension} ${usage} professional digital illustration. 
+Generate a professional, high-end ${dimension} ${usage} for a Salesforce consulting website.
 
-CONCEPT: A high-end visualization of: "${subject}"
+SUBJECT: ${subject}
 
-${sequentialGuidance}
-${userInstructions}
+SCENE DESCRIPTION:
+${compositionStyle}
+${agentforceContext}
+Use the Salesforce cloud logo as a subtle, translucent holographic watermark or secondary visual element to ground the brand.
 
-# STYLE CONSTRAINTS (MANDATORY):
-- VOID ENVIRONMENT: Deep, pitch-black infinite background. No ground, No floor, No grid, No mesh. 
-- FLUID AESTHETIC: Use liquid light, glowing nebulae, and organic energy flows. 
-- FORBIDDEN - NO PHYSICAL HARDWARE: No circuit boards, No PCB patterns, No motherboards, No soldering, No metal, No industrial parts.
-- FORBIDDEN - NO BASES: No pedestals, No blocks, No literal platforms or floors.
-- COLORS: High-contrast Electric Cyan (#00FFFF) and Vibrant Lime Green (#39FF14). Subtle violet ambient glows.
-- MATERIALS: Glassmorphism (frosted, translucent glass), liquid light, bokeh particles.
+STYLE & AESTHETIC:
+- BACKGROUND: Pure infinite black void. No ground, no horizon, no physical floors.
+- LIGHTING: Atmospheric volumetric glows. Use Electric Cyan (#00FFFF) and Neon Green (#39FF14) as the light sources.
+- MATERIALS: Glassmorphism—frosted glass panels, liquid light beams, and crystalline nodes. 
+- VIBE: Modern, cloud-native, sophisticated software. 
 
-${symbolLibrary}
+FORBIDDEN (DO NOT INCLUDE):
+- NO physical hardware, NO circuit boards, NO green PCB textures, No wires, NO robots, NO people, NO text/labels.
 
-Final Requirement: 8K Octane Render, sharp crystalline focus, ZERO text/labels.
+${userExclusions}
+
+Final Output: 8K Octane Render, sharp focus, cinematic depth of field.
 `;
 }
