@@ -15,42 +15,46 @@ export function generatePrompt(params: GenerateImageParams): string {
     const { usage, dimension, subject, additionalDetails } = params;
 
     // Visual translation guidance - helps DALL-E understand abstract concepts in a cloud-native way
-    // Strictly follows STYLE_GUIDE.md (e.g., no hardware, gears, or circuits)
-    const visualGuidance = `
-Visual representation guide:
-- "AI Agents" = glowing circular neural nodes, brain-inspired icons, or abstract energetic spheres
-- "Data flows" = flowing streams of glowing blue and green particles or liquid light beams
-- "Salesforce" = the Salesforce cloud logo as a translucent, glowing glass-like hologram
-- "Applications/Apps" = floating obsidian-glass rectangular panels with glowing borders
-- "Integration" = interlinked nodes with high-speed energy connections
-- "Growth" = ascending data streams or expanding glowing horizons
-- "Automation" = pulsating energy cores or orchestrated data movement
+    const symbolLibrary = `
+# SYMBOL REFERENCE LIBRARY (Use these to represent concepts):
+- "AI Agents" = glowing circular neural nodes, brain-inspired icons, or abstract energetic spheres.
+- "Data flows" = flowing streams of glowing blue and green particles or liquid light beams.
+- "Salesforce" = the Salesforce cloud logo as a translucent, glowing glass-like hologram.
+- "Applications/Apps" = floating obsidian-glass rectangular panels with glowing borders.
+- "Integration" = interlinked nodes with high-speed energy connections.
+- "Growth" = ascending data streams or expanding glowing horizons.
+- "Automation" = pulsating energy cores or orchestrated data movement.
+`.trim();
+
+    // Scene Composition Rules
+    const compositionRules = `
+# COMPOSITION RULES:
+- NARRATIVE PRIORITY: The image must first and foremost depict the core subject: "${subject}".
+- PLURALITY: If the subject involves a "team", "group", "multiple", or "network", ensure the composition features MANY distinct elements or entities interacting. Do not just center a single object.
+- DENSITY: Populating the scene with a rich variety of symbols from the library below is encouraged to show "scale" and "complexity".
 `.trim();
 
     // Build the visual scene description
-    let sceneDescription = `The scene should visually represent: "${subject}"`;
-
-    // Explicitly handle "No [thing]" instructions and emphasize them
+    let userInstructions = "";
     if (additionalDetails) {
-        sceneDescription += `\n\n**CRITICAL USER INSTRUCTIONS:** ${additionalDetails}\n(Strictly adhere to these exclusions. If "No robots" is specified, do not include any humanoid shapes.)`;
+        userInstructions = `\n\n**CRITICAL EXCLUSIONS/DETAILS:** ${additionalDetails}\n(Strictly follow these instructions. If "No robots" is specified, use abstract spheres or nodes only.)`;
     }
 
     return `
-Create a ${dimension} ${usage} illustration. 
+Create a ${dimension} ${usage} digital illustration. 
 
-Subject: ${subject}
+PREMISE: A high-end, professional visualization of: "${subject}"
 
-${sceneDescription}
-
-${visualGuidance}
+${compositionRules}
+${userInstructions}
 
 # STYLE CONSTRAINTS (STRICT):
-- Base: Deep navy/black background for maximum contrast.
-- Colors: Dominant Electric Cyan/Blue and Neon/Lime Green. Subtle purple accents only.
-- Feeling: Cloud-native, digital, software-focused, holographic.
-- FORBIDDEN: No robots (unless asked), No hardware, No circuit boards, No gears, No microchips, No PCB traces.
-- FORBIDDEN COLORS: No pink, No orange, No yellow, No red as primary colors.
+- Environment: Deep infinity-black background.
+- Colors: Dominant Electric Cyan/Blue (#00FFFF) and Neon/Lime Green (#39FF14). Purple subtle accents only.
+- Aesthetic: Cloud-native, software-focused, holographic, Glassmorphism. 
+- Technical: NO hardware (gears, circuits, microchips). NO text/labels.
+- Quality: 8K Octane Render, cinematic lighting, sharp focus.
 
-Final Requirement: NO text, NO labels, NO words. Use only visual symbols. Professional 8K Octane Render style.
+${symbolLibrary}
 `;
 }
