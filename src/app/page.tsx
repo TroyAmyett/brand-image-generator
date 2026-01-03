@@ -20,6 +20,15 @@ const DIMENSION_OPTIONS = [
   'Vertical (9:16)'
 ];
 
+interface HistoryItem {
+  timestamp: string;
+  usage: string;
+  dimension: string;
+  subject: string;
+  imageUrl: string;
+  prompt: string;
+}
+
 export default function Home() {
   const [usage, setUsage] = useState(USAGE_OPTIONS[0]);
   const [dimension, setDimension] = useState(DIMENSION_OPTIONS[0]);
@@ -33,6 +42,24 @@ export default function Home() {
   const [showPreview, setShowPreview] = useState(false);
   const [showRevision, setShowRevision] = useState(false);
   const [revisionText, setRevisionText] = useState('');
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+
+  // Fetch History
+  const fetchHistory = async () => {
+    try {
+      const response = await fetch('/api/history');
+      if (response.ok) {
+        const data = await response.json();
+        setHistory(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch history:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
 
   // Loading Cycle Logic
   useEffect(() => {
@@ -54,22 +81,23 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [loading]);
 
-  const handleDownload = async () => {
-    if (!result?.imageUrl) return;
+  const handleDownload = async (imageUrl?: string, imageSubject?: string) => {
+    const urlToUse = imageUrl || result?.imageUrl;
+    if (!urlToUse) return;
 
     try {
-      // Create SEO-friendly filename
-      const seoFilename = subject
+      const subjectToUse = imageSubject || subject;
+      const seoFilename = subjectToUse
         .trim()
         .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-') // Replace non-alphanumeric chars with hyphens
-        .replace(/(^-|-$)/g, '')     // Remove leading/trailing hyphens
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '')
         + '.png';
 
       const response = await fetch('/api/download', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageUrl: result.imageUrl })
+        body: JSON.stringify({ imageUrl: urlToUse })
       });
 
       if (!response.ok) throw new Error('Download failed');
@@ -85,8 +113,7 @@ export default function Home() {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Download failed:', error);
-      // Fallback: just open in new tab if fetch fails
-      window.open(result.imageUrl, '_blank');
+      window.open(urlToUse, '_blank');
     }
   };
 
@@ -120,6 +147,7 @@ export default function Home() {
       const data = await response.json();
       if (data.success) {
         setResult({ imageUrl: data.imageUrl, prompt: data.prompt });
+        fetchHistory(); // Refresh history
       } else {
         alert('Error: ' + data.error);
       }
@@ -139,7 +167,6 @@ export default function Home() {
     setShowRevision(false);
 
     try {
-      // Append revision instructions to additional details
       const revisedDetails = details
         ? `${details}\n\n**REVISION REQUEST:** ${revisionText}`
         : `**REVISION REQUEST:** ${revisionText}`;
@@ -161,6 +188,7 @@ export default function Home() {
       if (data.success) {
         setResult({ imageUrl: data.imageUrl, prompt: data.prompt });
         setRevisionText('');
+        fetchHistory(); // Refresh history
       } else {
         alert('Error: ' + data.error);
       }
@@ -170,6 +198,15 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const selectFromHistory = (item: HistoryItem) => {
+    setResult({ imageUrl: item.imageUrl, prompt: item.prompt });
+    setSubject(item.subject);
+    setUsage(item.usage);
+    setDimension(item.dimension);
+    setImageLoaded(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -315,7 +352,7 @@ export default function Home() {
 
             {result?.imageUrl && (
               <div className={styles.actionButtons}>
-                <button onClick={handleDownload} className={styles.secondaryButton}>
+                <button onClick={() => handleDownload()} className={styles.secondaryButton}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                     <polyline points="7 10 12 15 17 10"></polyline>
@@ -389,6 +426,31 @@ export default function Home() {
           </section>
         </div>
 
+        {/* History Section */}
+        {history.length > 0 && (
+          <section className={styles.historySection}>
+            <h2 className={styles.historyTitle}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8v4l3 3"></path><circle cx="12" cy="12" r="9"></circle></svg>
+              Recent Generations
+            </h2>
+            <div className={styles.historyGrid}>
+              {history.map((item, idx) => (
+                <div key={idx} className={styles.historyItem} onClick={() => selectFromHistory(item)}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={item.imageUrl} alt={item.subject} className={styles.historyThumb} />
+                  <div className={styles.historyInfo}>
+                    <p className={styles.historySubject}>{item.subject}</p>
+                    <div className={styles.historyMeta}>
+                      <span>{item.usage}</span>
+                      <span>{new Date(item.timestamp).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
         <footer className={styles.footer}>
           <p>API Endpoint for Automations (Make.com): <code className={styles.code}>POST /api/generate</code></p>
           <p className={styles.versionTag}>{APP_VERSION}</p>
@@ -408,7 +470,7 @@ export default function Home() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={result.imageUrl} alt={subject} className={styles.modalImage} />
             <div className={styles.modalActions}>
-              <button onClick={handleDownload} className={styles.button}>
+              <button onClick={() => handleDownload()} className={styles.button}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '0.5rem' }}>
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                   <polyline points="7 10 12 15 17 10"></polyline>

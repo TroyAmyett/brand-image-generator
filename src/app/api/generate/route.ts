@@ -33,7 +33,6 @@ export async function POST(request: Request) {
         }
 
         // Map UI dimensions to DALL-E 3 supported sizes
-        // DALL-E 3 supports: 1024x1024, 1024x1792 (Vertical), 1792x1024 (Horizontal)
         let size: "1024x1024" | "1024x1792" | "1792x1024" = "1024x1024";
 
         if (dimension.includes('Vertical') || dimension.includes('9:16')) {
@@ -56,7 +55,7 @@ export async function POST(request: Request) {
             model: "dall-e-3",
             prompt: prompt,
             size: size,
-            quality: "hd", // High quality for "premium" feel
+            quality: "hd",
             n: 1,
         });
 
@@ -66,23 +65,52 @@ export async function POST(request: Request) {
             throw new Error("No image URL returned from OpenAI");
         }
 
-        // SAVE FOR FUTURE REFERENCE (Note: This only works locally. Move to DB for Vercel)
-        const logEntry = `
-## ${new Date().toISOString()} - ${usage}
-**Subject:** ${subject}
-**Dimensions:** ${dimension} (Mapped to: ${size})
-**Prompt:**
-\`\`\`
-${prompt}
-\`\`\`
----
-`;
+        // Build History Item
+        const timestamp = new Date().toISOString();
+        const historyItem = {
+            id: timestamp,
+            timestamp,
+            usage,
+            dimension,
+            subject,
+            imageUrl,
+            prompt
+        };
 
+        // SAVE TO LOCAL JSON (for Local Dev persistency)
         try {
-            const historyPath = path.join(process.cwd(), 'generated_history.md');
-            fs.appendFileSync(historyPath, logEntry);
+            const dataDir = path.join(process.cwd(), 'data');
+            const historyPath = path.join(dataDir, 'history.json');
+
+            if (!fs.existsSync(dataDir)) {
+                fs.mkdirSync(dataDir);
+            }
+
+            let history = [];
+            if (fs.existsSync(historyPath)) {
+                const fileContent = fs.readFileSync(historyPath, 'utf-8');
+                history = JSON.parse(fileContent);
+            }
+
+            history.unshift(historyItem); // Add to beginning
+
+            // Limit to last 50 entries
+            if (history.length > 50) {
+                history = history.slice(0, 50);
+            }
+
+            fs.writeFileSync(historyPath, JSON.stringify(history, null, 2));
+        } catch (err) {
+            console.error('Failed to save to JSON history:', err);
+        }
+
+        // ALSO KEEP MARKDOWN LOG
+        try {
+            const logEntry = `\n## ${timestamp} - ${usage}\n**Subject:** ${subject}\n**Dimensions:** ${dimension}\n**URL:** ${imageUrl}\n**Prompt:**\n\`\`\`\n${prompt}\n\`\`\`\n---\n`;
+            const logPath = path.join(process.cwd(), 'generated_history.md');
+            fs.appendFileSync(logPath, logEntry);
         } catch (logError) {
-            // Silent fail in production/Vercel
+            // Silent fail
         }
 
         return NextResponse.json({

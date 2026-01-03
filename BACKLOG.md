@@ -8,6 +8,11 @@
 ## 🟡 Planned (Next Up)
 
 - [ ] **History View**: Show a list of previously generated images.
+- [ ] **Client-Specific Prompts & Styles**:
+  - Create a toggle/dropdown to select specific Client Profiles.
+  - Implement **CRUD** (Upload, Save, Update, Delete) for Client-specific styles and common instructions.
+  - Tie instructions to specific Users/Accounts.
+  - **Admin Dashboard**: Allow Admins to manage and view all Client Styles across the platform.
 
 ## 🧊 Icebox (Ideas/Future)
 
