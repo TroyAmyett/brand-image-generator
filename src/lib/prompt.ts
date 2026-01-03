@@ -20,10 +20,11 @@ export function generatePrompt(params: GenerateImageParams): string {
     // Visual translation guidance - helps DALL-E understand abstract concepts in a cloud-native way
     const symbolLibrary = `
 # SYMBOL REFERENCE LIBRARY:
-- "AI Agents" = glowing circular brain-node icons or abstract energetic spheres.
-- "Data flows" = liquid light beams or streams of glowing blue/green particles.
-- "Salesforce" = a translucent, glowing glass cloud logo.
-- "Apps/Tools" = floating obsidian-glass rectangular panels.
+- "Agentforce" = Orchestrated groups of glowing autonomous agent nodes, represented as energetic spheres with internal neural patterns.
+- "AI Agents" = Individual glowing circular brain-node icons or abstract energetic spheres.
+- "Data flows" = Liquid light beams or streams of glowing blue/green particles.
+- "Salesforce" = The iconic Salesforce cloud logo, rendered as a translucent, glowing glass-like hologram.
+- "Apps/Tools" = Floating obsidian-glass rectangular panels with glowing neon borders.
 - "Process Step" = A vertical or horizontal translucent glass tile with a glowing border.
 `.trim();
 
