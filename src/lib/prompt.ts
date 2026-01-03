@@ -19,26 +19,26 @@ export function generatePrompt(params: GenerateImageParams): string {
 
     // Visual translation guidance - helps DALL-E understand abstract concepts in a cloud-native way
     const symbolLibrary = `
-# SYMBOL REFERENCE LIBRARY:
-- "Agentforce" = Orchestrated groups of glowing autonomous agent nodes, represented as energetic spheres with internal neural patterns.
-- "AI Agents" = Individual glowing circular brain-node icons or abstract energetic spheres.
-- "Data flows" = Liquid light beams or streams of glowing blue/green particles.
-- "Salesforce" = The iconic Salesforce cloud logo, rendered as a translucent, glowing glass-like hologram.
-- "Apps/Tools" = Floating obsidian-glass rectangular panels with glowing neon borders.
-- "Process Step" = A vertical or horizontal translucent glass tile with a glowing border.
+# VISUAL SYMBOLS (STRICT ADHERENCE):
+- "Agentforce" = Orchestrated clusters of autonomous glowing spheres floating in an infinite void.
+- "AI Agents" = Spherical nodes of liquid energy with internal neural filaments.
+- "Data flows" = Sinuous, organic streams of liquid light and glowing particles connecting elements.
+- "Architecture/Platform" = A high-speed network of floating translucent glass panels and energetic nodes.
+- "Salesforce" = A glowing, semi-transparent prism-like cloud logo floating in the center.
+- "Steps/Process" = A sequence of glass portals or floating stage panels arranged in a clear path.
 `.trim();
 
     // Specific logic for linear/sequential subjects
     const sequentialGuidance = isSequential ? `
-# SEQUENTIAL COMPOSITION (MANDATORY):
-- The image MUST be a linear progression (Horizontal from Left-to-Right or a winding path).
-- DO NOT center the image. Use the full width of the ${dimension} canvas to show progress.
-- Represent "Steps" as a series of distinct, connected stages or glowing glass portals.
-- The layout should feel like a "Roadmap" or "Path to Success".
+# COMPOSITION: SEQUENTIAL FLOW
+- The layout is a linear, directional progression (typically Left-to-Right).
+- Avoid centered, circular, or pedestal-based compositions.
+- Use a wide, panoramic view to show a "Data Journey" through multiple stages.
 ` : `
-# BROAD COMPOSITION:
-- Use a clean, balanced layout focused on: "${subject}".
-- If multiple elements are involved, show them interacting in a unified space.
+# COMPOSITION: NETWORK ECOSYSTEM
+- A dynamic, three-dimensional network of floating elements.
+- Avoid physical structures, pedestals, or bases.
+- Everything should feel weightless and suspended in deep space.
 `;
 
     // Build the visual scene description
@@ -50,20 +50,21 @@ export function generatePrompt(params: GenerateImageParams): string {
     return `
 Create a ${dimension} ${usage} professional digital illustration. 
 
-PRIMARY TOPIC: "${subject}"
+CONCEPT: A high-end visualization of: "${subject}"
 
 ${sequentialGuidance}
 ${userInstructions}
 
-# STYLE CONSTRAINTS (STRICT):
-- Perspective: Panoramic or 3/4 isometric view (especially for steps/processes).
-- Environment: Clean, deep infinity-black background with subtle mesh/grid ground.
-- Colors: Electricity Cyan (#00FFFF) and Neon Green (#39FF14). Very subtle purple for ambient depth.
-- Materials: Glassmorphism, translucent panels, glowing edges, holographic light.
-- Forbidden: NO hardware, NO circuit boards, NO text, NO labels, NO people.
+# STYLE CONSTRAINTS (MANDATORY):
+- VOID ENVIRONMENT: Deep, pitch-black infinite background. No ground, No floor, No grid, No mesh. 
+- FLUID AESTHETIC: Use liquid light, glowing nebulae, and organic energy flows. 
+- FORBIDDEN - NO PHYSICAL HARDWARE: No circuit boards, No PCB patterns, No motherboards, No soldering, No metal, No industrial parts.
+- FORBIDDEN - NO BASES: No pedestals, No blocks, No literal platforms or floors.
+- COLORS: High-contrast Electric Cyan (#00FFFF) and Vibrant Lime Green (#39FF14). Subtle violet ambient glows.
+- MATERIALS: Glassmorphism (frosted, translucent glass), liquid light, bokeh particles.
 
 ${symbolLibrary}
 
-Final Requirement: High-fidelity 8K render, cinematic depth of field, sharp icons.
+Final Requirement: 8K Octane Render, sharp crystalline focus, ZERO text/labels.
 `;
 }
