@@ -14,49 +14,55 @@ export interface GenerateImageParams {
 export function generatePrompt(params: GenerateImageParams): string {
     const { usage, dimension, subject, additionalDetails } = params;
 
+    // Detection for sequential topics
+    const isSequential = /step|process|flow|workflow|stage|roadmap|journey/i.test(subject);
+
     // Visual translation guidance - helps DALL-E understand abstract concepts in a cloud-native way
     const symbolLibrary = `
-# SYMBOL REFERENCE LIBRARY (Use these to represent concepts):
-- "AI Agents" = glowing circular neural nodes, brain-inspired icons, or abstract energetic spheres.
-- "Data flows" = flowing streams of glowing blue and green particles or liquid light beams.
-- "Salesforce" = the Salesforce cloud logo as a translucent, glowing glass-like hologram.
-- "Applications/Apps" = floating obsidian-glass rectangular panels with glowing borders.
-- "Integration" = interlinked nodes with high-speed energy connections.
-- "Growth" = ascending data streams or expanding glowing horizons.
-- "Automation" = pulsating energy cores or orchestrated data movement.
-- "Workflow/Process" = A sequential series of glowing glass panels or nodes arranged in a clear directional path (left-to-right or cascading).
+# SYMBOL REFERENCE LIBRARY:
+- "AI Agents" = glowing circular brain-node icons or abstract energetic spheres.
+- "Data flows" = liquid light beams or streams of glowing blue/green particles.
+- "Salesforce" = a translucent, glowing glass cloud logo.
+- "Apps/Tools" = floating obsidian-glass rectangular panels.
+- "Process Step" = A vertical or horizontal translucent glass tile with a glowing border.
 `.trim();
 
-    // Scene Composition Rules
-    const compositionRules = `
-# COMPOSITION RULES:
-- NARRATIVE PRIORITY: The image must first and foremost depict the core subject: "${subject}".
-- PLURALITY: If the subject involves a "team", "group", "multiple", or "network", ensure the composition features MANY distinct elements or entities interacting. Do not just center a single object.
-- SEQUENTIALITY: For subjects involving "Workflow", "Steps", "Process", or "Stages", use a directional layout (typically left-to-right) that implies progress and chronological flow. Avoid chaotic branching that looks like a circuit.
-- DENSITY: Populating the scene with a rich variety of symbols from the library below is encouraged to show "scale" and "complexity".
-`.trim();
+    // Specific logic for linear/sequential subjects
+    const sequentialGuidance = isSequential ? `
+# SEQUENTIAL COMPOSITION (MANDATORY):
+- The image MUST be a linear progression (Horizontal from Left-to-Right or a winding path).
+- DO NOT center the image. Use the full width of the ${dimension} canvas to show progress.
+- Represent "Steps" as a series of distinct, connected stages or glowing glass portals.
+- The layout should feel like a "Roadmap" or "Path to Success".
+` : `
+# BROAD COMPOSITION:
+- Use a clean, balanced layout focused on: "${subject}".
+- If multiple elements are involved, show them interacting in a unified space.
+`;
 
     // Build the visual scene description
     let userInstructions = "";
     if (additionalDetails) {
-        userInstructions = `\n\n**CRITICAL EXCLUSIONS/DETAILS:** ${additionalDetails}\n(Strictly follow these instructions. If "No robots" is specified, use abstract spheres or nodes only.)`;
+        userInstructions = `\n\n**USER SPECIFIC INSTRUCTIONS:** ${additionalDetails}\n(Strictly follow these. If "No robots" is specified, use only abstract nodes.)`;
     }
 
     return `
-Create a ${dimension} ${usage} digital illustration. 
+Create a ${dimension} ${usage} professional digital illustration. 
 
-PREMISE: A high-end, professional visualization of: "${subject}"
+PRIMARY TOPIC: "${subject}"
 
-${compositionRules}
+${sequentialGuidance}
 ${userInstructions}
 
 # STYLE CONSTRAINTS (STRICT):
-- Environment: Deep infinity-black background.
-- Colors: Dominant Electric Cyan/Blue (#00FFFF) and Neon/Lime Green (#39FF14). Purple subtle accents only.
-- Aesthetic: Cloud-native, software-focused, holographic, Glassmorphism. 
-- Technical: NO hardware (gears, circuits, microchips). NO text/labels.
-- Quality: 8K Octane Render, cinematic lighting, sharp focus.
+- Perspective: Panoramic or 3/4 isometric view (especially for steps/processes).
+- Environment: Clean, deep infinity-black background with subtle mesh/grid ground.
+- Colors: Electricity Cyan (#00FFFF) and Neon Green (#39FF14). Very subtle purple for ambient depth.
+- Materials: Glassmorphism, translucent panels, glowing edges, holographic light.
+- Forbidden: NO hardware, NO circuit boards, NO text, NO labels, NO people.
 
 ${symbolLibrary}
+
+Final Requirement: High-fidelity 8K render, cinematic depth of field, sharp icons.
 `;
 }
