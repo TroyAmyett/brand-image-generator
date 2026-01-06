@@ -33,6 +33,13 @@ const ASSET_TYPE_OPTIONS = [
   { value: 'icon_set', label: 'Icon Set', description: 'Multiple related icons/symbols' },
 ];
 
+const BRAND_THEME_OPTIONS = [
+  { value: 'salesforce', label: 'Salesforce', description: 'Glowing cloud icon anchor' },
+  { value: 'general_ai', label: 'General AI', description: 'Abstract AI core anchor' },
+  { value: 'blockchain', label: 'Blockchain', description: 'Distributed ledger nodes' },
+  { value: 'neutral', label: 'Neutral', description: 'No platform-specific anchor' },
+];
+
 interface HistoryItem {
   timestamp: string;
   usage: string;
@@ -45,6 +52,7 @@ interface HistoryItem {
 export default function Home() {
   const [usage, setUsage] = useState(USAGE_OPTIONS[0]);
   const [assetType, setAssetType] = useState(ASSET_TYPE_OPTIONS[0].value);
+  const [brandTheme, setBrandTheme] = useState(BRAND_THEME_OPTIONS[0].value);
   const [dimension, setDimension] = useState(DIMENSION_OPTIONS[0]);
   const [subject, setSubject] = useState('');
   const [details, setDetails] = useState('');
@@ -205,6 +213,7 @@ export default function Home() {
         body: JSON.stringify({
           usage,
           asset_type: assetType,
+          brand_theme: brandTheme,
           dimension,
           subject,
           additionalDetails: details,
@@ -255,6 +264,7 @@ export default function Home() {
         body: JSON.stringify({
           usage,
           asset_type: assetType,
+          brand_theme: brandTheme,
           dimension,
           subject,
           additionalDetails: revisedDetails,
@@ -343,6 +353,23 @@ export default function Home() {
                   className={styles.select}
                 >
                   {ASSET_TYPE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value} title={opt.description}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label}>
+                  Brand Theme
+                </label>
+                <select
+                  value={brandTheme}
+                  onChange={(e) => setBrandTheme(e.target.value)}
+                  className={styles.select}
+                >
+                  {BRAND_THEME_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value} title={opt.description}>
                       {opt.label}
                     </option>

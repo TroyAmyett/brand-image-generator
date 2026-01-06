@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { generatePrompt, GenerateImageParams, StyleVariant, Mood, AssetType } from '@/lib/prompt';
+import { generatePrompt, GenerateImageParams, StyleVariant, Mood, AssetType, BrandTheme } from '@/lib/prompt';
 import fs from 'fs';
 import path from 'path';
 
@@ -28,6 +28,8 @@ const VALID_ASSET_TYPES: AssetType[] = [
     'hero_image', 'infographic', 'process_flow', 'comparison', 'checklist',
     'timeline', 'diagram', 'quote_card', 'stats_highlight', 'icon_set'
 ];
+
+const VALID_BRAND_THEMES: BrandTheme[] = ['salesforce', 'general_ai', 'blockchain', 'neutral'];
 
 const VALID_OUTPUT_FORMATS = ['png', 'jpg', 'webp'];
 
@@ -116,6 +118,7 @@ export async function POST(request: Request) {
         const mood = body.mood as Mood | undefined;
         const style_variant = body.style_variant as StyleVariant | undefined;
         const asset_type = body.asset_type as AssetType | undefined;
+        const brand_theme = body.brand_theme as BrandTheme | undefined;
         const additional_details = body.additional_details || body.additionalDetails;
         const output_format = body.output_format || 'png';
 
@@ -208,6 +211,20 @@ export async function POST(request: Request) {
             );
         }
 
+        // Validate optional brand_theme
+        if (brand_theme && !VALID_BRAND_THEMES.includes(brand_theme)) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    error: {
+                        code: 'INVALID_BRAND_THEME',
+                        message: `Invalid brand_theme. Must be one of: ${VALID_BRAND_THEMES.join(', ')}`
+                    }
+                },
+                { status: 400 }
+            );
+        }
+
         // Validate output_format
         if (!VALID_OUTPUT_FORMATS.includes(output_format)) {
             return NextResponse.json(
@@ -244,7 +261,8 @@ export async function POST(request: Request) {
             additionalDetails: additional_details,
             mood: mood || 'innovative',
             style_variant,
-            asset_type: asset_type || 'hero_image'
+            asset_type: asset_type || 'hero_image',
+            brand_theme: brand_theme || 'salesforce'
         };
 
         const prompt = generatePrompt(params);
@@ -286,6 +304,7 @@ export async function POST(request: Request) {
         const timestamp = new Date().toISOString();
         const appliedStyle = style_variant || 'auto-detected';
         const appliedAssetType = asset_type || 'hero_image';
+        const appliedBrandTheme = brand_theme || 'salesforce';
 
         // Save to history (local JSON)
         try {
@@ -310,6 +329,7 @@ export async function POST(request: Request) {
                 subject,
                 mood: mood || 'innovative',
                 style_variant: appliedStyle,
+                brand_theme: appliedBrandTheme,
                 imageUrl,
                 prompt
             });
@@ -344,7 +364,8 @@ export async function POST(request: Request) {
                 model: 'dall-e-3',
                 style_applied: appliedStyle,
                 mood_applied: mood || 'innovative',
-                asset_type_applied: appliedAssetType
+                asset_type_applied: appliedAssetType,
+                brand_theme_applied: appliedBrandTheme
             },
             // Legacy fields for backward compatibility with UI
             imageUrl: imageUrl,

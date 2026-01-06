@@ -19,6 +19,8 @@ export type AssetType =
     | 'hero_image' | 'infographic' | 'process_flow' | 'comparison' | 'checklist'
     | 'timeline' | 'diagram' | 'quote_card' | 'stats_highlight' | 'icon_set';
 
+export type BrandTheme = 'salesforce' | 'general_ai' | 'blockchain' | 'neutral';
+
 export interface GenerateImageParams {
     usage: ImageUsage;
     dimension: ImageDimension;
@@ -27,7 +29,16 @@ export interface GenerateImageParams {
     mood?: Mood;
     style_variant?: StyleVariant;
     asset_type?: AssetType;
+    brand_theme?: BrandTheme;
 }
+
+// Brand theme anchor text
+const BRAND_THEME_ANCHORS: Record<BrandTheme, string> = {
+    salesforce: "with a glowing Salesforce-style cloud icon as the central anchoring element",
+    general_ai: "with an abstract glowing AI core as the central element",
+    blockchain: "with interconnected blockchain nodes and distributed ledger chains as the central anchoring element",
+    neutral: ""
+};
 
 // Negative prompt - constant for all generations
 const NEGATIVE_PROMPT = "no people, no faces, no robots, no humanoids, no text, no words, no letters, no blurry elements, no low resolution, no distortion, no noise, no clutter, no cartoon style, no flat illustration, no watermark, no brains, no abstract blobs";
@@ -67,15 +78,19 @@ function generateFocalPoint(subject: string): string {
 }
 
 export function generatePrompt(params: GenerateImageParams): string {
-    const { subject, additionalDetails } = params;
+    const { subject, additionalDetails, brand_theme = 'salesforce' } = params;
 
     // Build focal point: use additional details if provided, otherwise generate from subject
     const focalPointDescription = additionalDetails && additionalDetails.trim()
         ? additionalDetails.trim()
         : generateFocalPoint(subject);
 
-    // Master template - only SUBJECT and FOCAL_POINT_DESCRIPTION change
-    const prompt = `A futuristic AI ${subject} visualized as a high-tech cyberpunk data environment. ${focalPointDescription}
+    // Get brand theme anchor text
+    const themeAnchor = BRAND_THEME_ANCHORS[brand_theme];
+    const themeText = themeAnchor ? ` ${themeAnchor}` : '';
+
+    // Master template - SUBJECT, FOCAL_POINT_DESCRIPTION, and THEME_ANCHOR change
+    const prompt = `A futuristic AI ${subject}${themeText} visualized as a high-tech cyberpunk data environment. ${focalPointDescription}
 
 Surrounding elements include advanced holographic dashboards, digital control panels displaying analytics and system metrics. Neon circuitry lines run across surfaces like a motherboard, connecting all elements.
 
