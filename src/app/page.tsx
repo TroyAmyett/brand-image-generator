@@ -149,11 +149,14 @@ export default function Home() {
         setResult({ imageUrl: data.imageUrl, prompt: data.prompt });
         fetchHistory(); // Refresh history
       } else {
-        alert('Error: ' + data.error);
+        const errorMsg = data.error?.message || data.error || 'Something went wrong';
+        console.error('Generation error:', data.error);
+        alert(errorMsg);
       }
     } catch (error) {
-      console.error(error);
-      alert('Failed to generate image.');
+      console.error('Generation error:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Failed to generate image.';
+      alert(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -190,11 +193,14 @@ export default function Home() {
         setRevisionText('');
         fetchHistory(); // Refresh history
       } else {
-        alert('Error: ' + data.error);
+        const errorMsg = data.error?.message || data.error || 'Something went wrong';
+        console.error('Revision error:', data.error);
+        alert(errorMsg);
       }
     } catch (error) {
-      console.error(error);
-      alert('Failed to generate revised image.');
+      console.error('Revision error:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Failed to generate revised image.';
+      alert(errorMsg);
     } finally {
       setLoading(false);
     }
