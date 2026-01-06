@@ -20,6 +20,19 @@ const DIMENSION_OPTIONS = [
   'Vertical (9:16)'
 ];
 
+const ASSET_TYPE_OPTIONS = [
+  { value: 'hero_image', label: 'Hero Image', description: 'Standard featured image' },
+  { value: 'infographic', label: 'Infographic', description: 'Data visualization, stats, vertical layout' },
+  { value: 'process_flow', label: 'Process Flow', description: 'Step-by-step diagram, horizontal or vertical flow' },
+  { value: 'comparison', label: 'Comparison', description: 'Side-by-side, vs layout, before/after' },
+  { value: 'checklist', label: 'Checklist', description: 'List format, checkmarks, task-oriented' },
+  { value: 'timeline', label: 'Timeline', description: 'Sequential events, milestones' },
+  { value: 'diagram', label: 'Diagram', description: 'Technical illustration, architecture' },
+  { value: 'quote_card', label: 'Quote Card', description: 'Pull quote, testimonial style' },
+  { value: 'stats_highlight', label: 'Stats Highlight', description: 'Big numbers, KPIs, metrics' },
+  { value: 'icon_set', label: 'Icon Set', description: 'Multiple related icons/symbols' },
+];
+
 interface HistoryItem {
   timestamp: string;
   usage: string;
@@ -31,6 +44,7 @@ interface HistoryItem {
 
 export default function Home() {
   const [usage, setUsage] = useState(USAGE_OPTIONS[0]);
+  const [assetType, setAssetType] = useState(ASSET_TYPE_OPTIONS[0].value);
   const [dimension, setDimension] = useState(DIMENSION_OPTIONS[0]);
   const [subject, setSubject] = useState('');
   const [details, setDetails] = useState('');
@@ -138,6 +152,7 @@ export default function Home() {
         },
         body: JSON.stringify({
           usage,
+          asset_type: assetType,
           dimension,
           subject,
           additionalDetails: details,
@@ -181,6 +196,7 @@ export default function Home() {
         },
         body: JSON.stringify({
           usage,
+          asset_type: assetType,
           dimension,
           subject,
           additionalDetails: revisedDetails,
@@ -247,6 +263,23 @@ export default function Home() {
                 >
                   {USAGE_OPTIONS.map((opt) => (
                     <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label}>
+                  Asset Type
+                </label>
+                <select
+                  value={assetType}
+                  onChange={(e) => setAssetType(e.target.value)}
+                  className={styles.select}
+                >
+                  {ASSET_TYPE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value} title={opt.description}>
+                      {opt.label}
+                    </option>
                   ))}
                 </select>
               </div>

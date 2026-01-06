@@ -15,6 +15,10 @@ export type StyleVariant =
 
 export type Mood = 'innovative' | 'professional' | 'energetic' | 'trustworthy' | 'futuristic';
 
+export type AssetType =
+    | 'hero_image' | 'infographic' | 'process_flow' | 'comparison' | 'checklist'
+    | 'timeline' | 'diagram' | 'quote_card' | 'stats_highlight' | 'icon_set';
+
 export interface GenerateImageParams {
     usage: ImageUsage;
     dimension: ImageDimension;
@@ -22,6 +26,7 @@ export interface GenerateImageParams {
     additionalDetails?: string;
     mood?: Mood;
     style_variant?: StyleVariant;
+    asset_type?: AssetType;
 }
 
 // Style variant keyword snippets from API spec
@@ -45,6 +50,20 @@ const MOOD_SNIPPETS: Record<Mood, string> = {
     energetic: "high energy, vibrant, bold contrast, electric atmosphere",
     trustworthy: "stable, reliable, grounded, established, secure",
     futuristic: "sci-fi inspired, next-generation, advanced technology, neon accents"
+};
+
+// Asset type snippets for layout and composition guidance
+const ASSET_TYPE_SNIPPETS: Record<AssetType, string> = {
+    hero_image: "featured hero image, bold focal point, cinematic composition, impactful visual",
+    infographic: "vertical infographic layout, data visualization, statistics, icons, sectioned layout, information hierarchy",
+    process_flow: "horizontal process flow diagram, numbered steps, arrows connecting stages, clear progression, sequential layout",
+    comparison: "side-by-side comparison layout, split composition, contrasting elements, versus format, balanced halves",
+    checklist: "list format layout, checkmark icons, task-oriented visual, organized rows, completion indicators",
+    timeline: "horizontal timeline layout, sequential events, milestone markers, chronological flow, connected points",
+    diagram: "technical diagram illustration, architecture visualization, system components, labeled sections, structural layout",
+    quote_card: "pull quote card design, testimonial style, quotation marks, centered text area, elegant framing",
+    stats_highlight: "big numbers display, KPI metrics, bold statistics, data-driven visual, prominent figures",
+    icon_set: "multiple related icons, symbol collection, unified icon style, grid arrangement, consistent visual language"
 };
 
 // Subject keyword mappings to enhance visual concepts
@@ -146,7 +165,8 @@ export function generatePrompt(params: GenerateImageParams): string {
         subject,
         additionalDetails,
         mood = 'innovative',
-        style_variant
+        style_variant,
+        asset_type = 'hero_image'
     } = params;
 
     // Determine style variant (use provided or auto-detect)
@@ -156,6 +176,7 @@ export function generatePrompt(params: GenerateImageParams): string {
     const enhancedSubject = enhanceSubject(subject);
     const styleKeywords = STYLE_SNIPPETS[styleVariant];
     const moodKeywords = MOOD_SNIPPETS[mood];
+    const assetTypeKeywords = ASSET_TYPE_SNIPPETS[asset_type];
     const composition = getCompositionForUsage(usage);
     const aspectRatio = getAspectRatio(dimension);
 
@@ -166,18 +187,20 @@ export function generatePrompt(params: GenerateImageParams): string {
     const techSpecs = `${aspectRatio}, 3D render, cinematic lighting, high quality, photorealistic`;
 
     // Build the prompt following spec template:
-    // [SUBJECT], [STYLE_VARIANT keywords], [MOOD keywords],
+    // [NO TEXT PREFIX], [SUBJECT], [ASSET_TYPE], [STYLE_VARIANT keywords], [MOOD keywords],
     // dark background with colors, [COMPOSITION], [TECH_SPECS]
 
-    let prompt = `${enhancedSubject}, ${styleKeywords}, ${moodKeywords}, ${colorScheme}, ${composition}, ${techSpecs}`;
+    const noTextPrefix = "Abstract visualization with NO text, words, letters, numbers, or typography. Pure visual elements only.";
+
+    let prompt = `${noTextPrefix} ${enhancedSubject}, ${assetTypeKeywords}, ${styleKeywords}, ${moodKeywords}, ${colorScheme}, ${composition}, ${techSpecs}`;
 
     // Add user's additional details as priority instructions
     if (additionalDetails && additionalDetails.trim()) {
         prompt += `. IMPORTANT: ${additionalDetails.trim()}`;
     }
 
-    // Add negative prompt guidance
-    prompt += `. Avoid: text, words, letters, logos, watermarks, white backgrounds, cluttered compositions, cartoon style, low quality.`;
+    // Add expanded negative prompt guidance to prevent text artifacts
+    prompt += `. Avoid: text, words, letters, numbers, labels, captions, titles, typography, writing, signage, logos, watermarks, illegible text, misspelled words, random characters, symbols with text, white backgrounds, cluttered compositions, cartoon style, low quality.`;
 
     return prompt;
 }

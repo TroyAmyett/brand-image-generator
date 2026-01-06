@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { generatePrompt, GenerateImageParams, StyleVariant, Mood } from '@/lib/prompt';
+import { generatePrompt, GenerateImageParams, StyleVariant, Mood, AssetType } from '@/lib/prompt';
 import fs from 'fs';
 import path from 'path';
 
@@ -23,6 +23,11 @@ const VALID_STYLE_VARIANTS: StyleVariant[] = [
 ];
 
 const VALID_MOODS: Mood[] = ['innovative', 'professional', 'energetic', 'trustworthy', 'futuristic'];
+
+const VALID_ASSET_TYPES: AssetType[] = [
+    'hero_image', 'infographic', 'process_flow', 'comparison', 'checklist',
+    'timeline', 'diagram', 'quote_card', 'stats_highlight', 'icon_set'
+];
 
 const VALID_OUTPUT_FORMATS = ['png', 'jpg', 'webp'];
 
@@ -87,6 +92,7 @@ export async function POST(request: Request) {
         const subject = body.subject;
         const mood = body.mood as Mood | undefined;
         const style_variant = body.style_variant as StyleVariant | undefined;
+        const asset_type = body.asset_type as AssetType | undefined;
         const additional_details = body.additional_details || body.additionalDetails;
         const output_format = body.output_format || 'png';
 
@@ -165,6 +171,20 @@ export async function POST(request: Request) {
             );
         }
 
+        // Validate optional asset_type
+        if (asset_type && !VALID_ASSET_TYPES.includes(asset_type)) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    error: {
+                        code: 'INVALID_ASSET_TYPE',
+                        message: `Invalid asset_type. Must be one of: ${VALID_ASSET_TYPES.join(', ')}`
+                    }
+                },
+                { status: 400 }
+            );
+        }
+
         // Validate output_format
         if (!VALID_OUTPUT_FORMATS.includes(output_format)) {
             return NextResponse.json(
@@ -200,7 +220,8 @@ export async function POST(request: Request) {
             subject,
             additionalDetails: additional_details,
             mood: mood || 'innovative',
-            style_variant
+            style_variant,
+            asset_type: asset_type || 'hero_image'
         };
 
         const prompt = generatePrompt(params);
@@ -219,6 +240,7 @@ export async function POST(request: Request) {
             prompt: prompt,
             size: size,
             quality: "hd",
+            style: "natural", // Use natural style to reduce text artifacts
             n: 1,
         });
 
@@ -240,6 +262,7 @@ export async function POST(request: Request) {
         // Build response metadata
         const timestamp = new Date().toISOString();
         const appliedStyle = style_variant || 'auto-detected';
+        const appliedAssetType = asset_type || 'hero_image';
 
         // Save to history (local JSON)
         try {
@@ -297,7 +320,8 @@ export async function POST(request: Request) {
                 generated_at: timestamp,
                 model: 'dall-e-3',
                 style_applied: appliedStyle,
-                mood_applied: mood || 'innovative'
+                mood_applied: mood || 'innovative',
+                asset_type_applied: appliedAssetType
             },
             // Legacy fields for backward compatibility with UI
             imageUrl: imageUrl,
