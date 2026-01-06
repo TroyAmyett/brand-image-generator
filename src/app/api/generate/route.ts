@@ -18,7 +18,7 @@ const VALID_DIMENSIONS = [
 ];
 
 const VALID_STYLE_VARIANTS: StyleVariant[] = [
-    'abstract_tech', 'geometric', 'gradient_mesh', 'isometric', 'particle_flow',
+    'clean_tech', 'abstract_tech', 'geometric', 'gradient_mesh', 'isometric', 'particle_flow',
     'neural_network', 'dashboard', 'connection', 'funnel', 'minimal'
 ];
 

@@ -57,6 +57,10 @@ export default function Home() {
   const [showRevision, setShowRevision] = useState(false);
   const [revisionText, setRevisionText] = useState('');
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [showSettings, setShowSettings] = useState(false);
+  const [styleGuide, setStyleGuide] = useState('');
+  const [styleGuideLoading, setStyleGuideLoading] = useState(false);
+  const [styleGuideSaved, setStyleGuideSaved] = useState(false);
 
   // Fetch History
   const fetchHistory = async () => {
@@ -69,6 +73,52 @@ export default function Home() {
     } catch (error) {
       console.error('Failed to fetch history:', error);
     }
+  };
+
+  // Fetch Style Guide
+  const fetchStyleGuide = async () => {
+    try {
+      setStyleGuideLoading(true);
+      const response = await fetch('/api/settings/style-guide');
+      if (response.ok) {
+        const data = await response.json();
+        setStyleGuide(data.content || '');
+      }
+    } catch (error) {
+      console.error('Failed to fetch style guide:', error);
+    } finally {
+      setStyleGuideLoading(false);
+    }
+  };
+
+  // Save Style Guide
+  const saveStyleGuide = async () => {
+    try {
+      setStyleGuideLoading(true);
+      const response = await fetch('/api/settings/style-guide', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: styleGuide }),
+      });
+      if (response.ok) {
+        setStyleGuideSaved(true);
+        setTimeout(() => setStyleGuideSaved(false), 2000);
+      } else {
+        const data = await response.json();
+        alert(data.error?.message || 'Failed to save style guide');
+      }
+    } catch (error) {
+      console.error('Failed to save style guide:', error);
+      alert('Failed to save style guide');
+    } finally {
+      setStyleGuideLoading(false);
+    }
+  };
+
+  // Open settings and load style guide
+  const openSettings = () => {
+    setShowSettings(true);
+    fetchStyleGuide();
   };
 
   useEffect(() => {
@@ -140,11 +190,13 @@ export default function Home() {
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('[Generate] Starting - single API call');
     setLoading(true);
     setResult(null);
     setImageLoaded(false);
 
     try {
+      console.log('[Generate] Calling /api/generate...');
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: {
@@ -160,8 +212,13 @@ export default function Home() {
       });
 
       const data = await response.json();
+      console.log('[Generate] Response received:', { success: data.success, hasImageUrl: !!data.imageUrl, hasImage_url: !!data.image_url });
       if (data.success) {
-        setResult({ imageUrl: data.imageUrl, prompt: data.prompt });
+        // Support both legacy (imageUrl) and new (image_url) response formats
+        const imageUrl = data.imageUrl || data.image_url;
+        const prompt = data.prompt || data.prompt_used;
+        console.log('[Generate] Setting result with imageUrl:', imageUrl?.substring(0, 50) + '...');
+        setResult({ imageUrl, prompt });
         fetchHistory(); // Refresh history
       } else {
         const errorMsg = data.error?.message || data.error || 'Something went wrong';
@@ -173,6 +230,7 @@ export default function Home() {
       const errorMsg = error instanceof Error ? error.message : 'Failed to generate image.';
       alert(errorMsg);
     } finally {
+      console.log('[Generate] Complete, setting loading=false');
       setLoading(false);
     }
   };
@@ -235,9 +293,17 @@ export default function Home() {
     <main className={styles.main}>
       <div className={styles.container}>
         <header className={styles.header}>
-          <h1 className={styles.title}>
-            Brand Image Generator
-          </h1>
+          <div className={styles.headerTop}>
+            <h1 className={styles.title}>
+              Brand Image Generator
+            </h1>
+            <button onClick={openSettings} className={styles.settingsButton} title="Settings">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              </svg>
+            </button>
+          </div>
           <p className={styles.subtitle}>
             Generate on-brand website assets aligned with our Style Guide.
           </p>
@@ -516,6 +582,59 @@ export default function Home() {
                   <line x1="12" y1="15" x2="12" y2="3"></line>
                 </svg>
                 Download .PNG
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <div className={styles.modal} onClick={() => setShowSettings(false)}>
+          <div className={styles.settingsModal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.settingsHeader}>
+              <h2>Settings</h2>
+              <button className={styles.modalClose} onClick={() => setShowSettings(false)}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+
+            <div className={styles.settingsContent}>
+              <div className={styles.settingsSection}>
+                <h3>Style Guide</h3>
+                <p className={styles.settingsDescription}>
+                  Customize the visual style guide used for generating images. This defines colors, themes, and visual elements.
+                </p>
+                {styleGuideLoading && !styleGuide ? (
+                  <div className={styles.settingsLoading}>Loading...</div>
+                ) : (
+                  <textarea
+                    value={styleGuide}
+                    onChange={(e) => setStyleGuide(e.target.value)}
+                    className={styles.styleGuideEditor}
+                    placeholder="Enter your style guide here..."
+                    rows={20}
+                  />
+                )}
+              </div>
+            </div>
+
+            <div className={styles.settingsFooter}>
+              <button
+                onClick={() => setShowSettings(false)}
+                className={styles.secondaryButton}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveStyleGuide}
+                disabled={styleGuideLoading}
+                className={styles.button}
+              >
+                {styleGuideLoading ? 'Saving...' : styleGuideSaved ? 'Saved!' : 'Save Changes'}
               </button>
             </div>
           </div>
