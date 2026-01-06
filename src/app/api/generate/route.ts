@@ -40,8 +40,31 @@ function authenticateRequest(request: Request): boolean {
         return true;
     }
 
+    // Check for API key in header
     const providedKey = request.headers.get('X-API-Key') || request.headers.get('x-api-key');
-    return providedKey === apiKey;
+    if (providedKey === apiKey) {
+        return true;
+    }
+
+    // Allow same-origin requests (UI) without API key
+    const origin = request.headers.get('origin');
+    const referer = request.headers.get('referer');
+    const host = request.headers.get('host');
+
+    // If request comes from the same host (UI), allow it
+    if (host && (origin?.includes(host) || referer?.includes(host))) {
+        return true;
+    }
+
+    // For Vercel deployments, check if referer matches the deployment URL
+    if (referer && (referer.includes('vercel.app') || referer.includes('localhost'))) {
+        const refererHost = new URL(referer).host;
+        if (host === refererHost) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 // Map dimensions to DALL-E 3 supported sizes
