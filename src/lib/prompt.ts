@@ -7,7 +7,8 @@ export type ImageUsage =
 
 export type ImageDimension =
     | 'Full screen (16:9)' | 'Square (1:1)' | 'Rectangle (4:3)' | 'Vertical (9:16)'
-    | '16:9' | '16:9_blog' | 'og_image' | 'square' | 'card' | 'portrait' | 'wide_banner' | 'icon';
+    | '16:9' | '16:9_blog' | 'og_image' | 'square' | 'card' | 'portrait' | 'wide_banner' | 'icon'
+    | 'hero_wide' | 'card_4x3' | 'card_3x2' | 'master';
 
 export type StyleVariant =
     | 'clean_tech' | 'abstract_tech' | 'geometric' | 'gradient_mesh' | 'isometric' | 'particle_flow'
@@ -30,6 +31,7 @@ export interface GenerateImageParams {
     style_variant?: StyleVariant;
     asset_type?: AssetType;
     brand_theme?: BrandTheme;
+    is_asset_set?: boolean; // When true, generates master optimized for cropping
 }
 
 // Brand theme anchor text
@@ -77,8 +79,14 @@ function generateFocalPoint(subject: string): string {
     return `A central visualization representing ${subject}, with glowing elements that embody the core concept. The main focus shows the essence of ${subject} through interconnected technological components.`;
 }
 
+// Hero wide composition instruction for 21:9 crops
+const HERO_WIDE_COMPOSITION = `ultra-wide cinematic composition with key elements centered in the middle third of the image, leaving negative space on left and right sides suitable for dark fade effects`;
+
+// Asset set composition instruction - optimized for center-cropping to multiple ratios
+const ASSET_SET_COMPOSITION = `composition with all key elements concentrated in the center of the image, leaving generous margins on all sides to allow for cropping to various aspect ratios including square, 4:3, and 21:9 without losing important content`;
+
 export function generatePrompt(params: GenerateImageParams): string {
-    const { subject, additionalDetails, brand_theme = 'salesforce' } = params;
+    const { subject, additionalDetails, brand_theme = 'salesforce', dimension, is_asset_set } = params;
 
     // Build focal point: use additional details if provided, otherwise generate from subject
     const focalPointDescription = additionalDetails && additionalDetails.trim()
@@ -89,8 +97,16 @@ export function generatePrompt(params: GenerateImageParams): string {
     const themeAnchor = BRAND_THEME_ANCHORS[brand_theme];
     const themeText = themeAnchor ? ` ${themeAnchor}` : '';
 
+    // Add composition instructions based on dimension or asset set mode
+    let compositionInstruction = '';
+    if (is_asset_set) {
+        compositionInstruction = ` ${ASSET_SET_COMPOSITION}`;
+    } else if (dimension === 'hero_wide') {
+        compositionInstruction = ` ${HERO_WIDE_COMPOSITION}`;
+    }
+
     // Master template - SUBJECT, FOCAL_POINT_DESCRIPTION, and THEME_ANCHOR change
-    const prompt = `A futuristic AI ${subject}${themeText} visualized as a high-tech cyberpunk data environment. ${focalPointDescription}
+    const prompt = `A futuristic AI ${subject}${themeText} visualized as a high-tech cyberpunk data environment.${compositionInstruction} ${focalPointDescription}
 
 Surrounding elements include advanced holographic dashboards, digital control panels displaying analytics and system metrics. Neon circuitry lines run across surfaces like a motherboard, connecting all elements.
 

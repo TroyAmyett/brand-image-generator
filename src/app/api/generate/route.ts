@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { generatePrompt, GenerateImageParams, StyleVariant, Mood, AssetType, BrandTheme } from '@/lib/prompt';
+import { processAssetSet, bufferToDataUrl, ASSET_VARIANTS } from '@/lib/imageProcessor';
 import fs from 'fs';
 import path from 'path';
 
@@ -13,9 +14,15 @@ const VALID_USAGE_CONTEXTS = [
 
 const VALID_DIMENSIONS = [
     '16:9', '16:9_blog', 'og_image', 'square', 'card', 'portrait', 'wide_banner', 'icon',
+    // New asset set dimensions
+    'hero_wide', 'card_4x3', 'card_3x2', 'master',
     // Legacy UI values
-    'Full screen (16:9)', 'Square (1:1)', 'Rectangle (4:3)', 'Vertical (9:16)'
+    'Full screen (16:9)', 'Square (1:1)', 'Rectangle (4:3)', 'Vertical (9:16)',
+    'Hero Wide (21:9)', 'Card (4:3)', 'Card (3:2)'
 ];
+
+// Valid asset set variants
+const VALID_ASSET_SET_VARIANTS = ['master', 'hero_wide', 'card_4x3', 'card_3x2', 'square'];
 
 const VALID_STYLE_VARIANTS: StyleVariant[] = [
     'clean_tech', 'abstract_tech', 'geometric', 'gradient_mesh', 'isometric', 'particle_flow',
@@ -122,10 +129,14 @@ export async function POST(request: Request) {
         const additional_details = body.additional_details || body.additionalDetails;
         const output_format = body.output_format || 'png';
 
+        // Asset Set mode parameters
+        const generate_mode = body.generate_mode || 'single'; // 'single' or 'asset_set'
+        const asset_set_variants = body.asset_set_variants as string[] || ['master', 'hero_wide', 'card_4x3'];
+
         // Validate required fields
         const missingFields: string[] = [];
         if (!usage_context) missingFields.push('usage_context');
-        if (!dimensions) missingFields.push('dimensions');
+        if (!dimensions && generate_mode !== 'asset_set') missingFields.push('dimensions');
         if (!subject) missingFields.push('subject');
 
         if (missingFields.length > 0) {
@@ -155,8 +166,8 @@ export async function POST(request: Request) {
             );
         }
 
-        // Validate dimensions
-        if (!VALID_DIMENSIONS.includes(dimensions)) {
+        // Validate dimensions (skip for asset_set mode)
+        if (generate_mode !== 'asset_set' && !VALID_DIMENSIONS.includes(dimensions)) {
             return NextResponse.json(
                 {
                     success: false,
@@ -167,6 +178,37 @@ export async function POST(request: Request) {
                 },
                 { status: 400 }
             );
+        }
+
+        // Validate generate_mode
+        if (generate_mode !== 'single' && generate_mode !== 'asset_set') {
+            return NextResponse.json(
+                {
+                    success: false,
+                    error: {
+                        code: 'INVALID_GENERATE_MODE',
+                        message: 'Invalid generate_mode. Must be "single" or "asset_set"'
+                    }
+                },
+                { status: 400 }
+            );
+        }
+
+        // Validate asset_set_variants
+        if (generate_mode === 'asset_set') {
+            const invalidVariants = asset_set_variants.filter((v: string) => !VALID_ASSET_SET_VARIANTS.includes(v));
+            if (invalidVariants.length > 0) {
+                return NextResponse.json(
+                    {
+                        success: false,
+                        error: {
+                            code: 'INVALID_ASSET_SET_VARIANTS',
+                            message: `Invalid asset_set_variants: ${invalidVariants.join(', ')}. Must be one of: ${VALID_ASSET_SET_VARIANTS.join(', ')}`
+                        }
+                    },
+                    { status: 400 }
+                );
+            }
         }
 
         // Validate optional mood
@@ -254,19 +296,22 @@ export async function POST(request: Request) {
         }
 
         // Build prompt using the updated prompt generator
+        const isAssetSet = generate_mode === 'asset_set';
         const params: GenerateImageParams = {
             usage: usage_context,
-            dimension: dimensions,
+            dimension: isAssetSet ? 'master' : dimensions, // Asset set always generates master 16:9
             subject,
             additionalDetails: additional_details,
             mood: mood || 'innovative',
             style_variant,
             asset_type: asset_type || 'hero_image',
-            brand_theme: brand_theme || 'salesforce'
+            brand_theme: brand_theme || 'salesforce',
+            is_asset_set: isAssetSet
         };
 
         const prompt = generatePrompt(params);
-        const size = getDalleSize(dimensions);
+        // Asset set always generates at 1792x1024 (master 16:9)
+        const size = isAssetSet ? "1792x1024" : getDalleSize(dimensions);
 
         // Initialize OpenAI and generate image
         const { OpenAI } = await import('openai');
@@ -274,7 +319,7 @@ export async function POST(request: Request) {
             apiKey: process.env.OPENAI_API_KEY,
         });
 
-        console.log(`[API] Generating image - Size: ${size}, Style: ${style_variant || 'auto'}, Mood: ${mood || 'innovative'}`);
+        console.log(`[API] Generating image - Mode: ${generate_mode}, Size: ${size}, Style: ${style_variant || 'auto'}, Mood: ${mood || 'innovative'}`);
 
         const response = await openai.images.generate({
             model: "dall-e-3",
@@ -285,9 +330,9 @@ export async function POST(request: Request) {
             n: 1,
         });
 
-        const imageUrl = response.data?.[0]?.url;
+        const masterImageUrl = response.data?.[0]?.url;
 
-        if (!imageUrl) {
+        if (!masterImageUrl) {
             return NextResponse.json(
                 {
                     success: false,
@@ -305,6 +350,112 @@ export async function POST(request: Request) {
         const appliedStyle = style_variant || 'auto-detected';
         const appliedAssetType = asset_type || 'hero_image';
         const appliedBrandTheme = brand_theme || 'salesforce';
+
+        // Handle Asset Set mode - process variants
+        if (isAssetSet) {
+            console.log(`[API] Processing asset set variants: ${asset_set_variants.join(', ')}`);
+
+            try {
+                const processedImages = await processAssetSet(masterImageUrl, asset_set_variants);
+
+                // Build asset set response
+                const assetSet: Record<string, { url: string; dimensions: string; width: number; height: number }> = {};
+
+                for (const [key, processed] of Object.entries(processedImages)) {
+                    const variant = ASSET_VARIANTS[key];
+                    assetSet[key] = {
+                        url: bufferToDataUrl(processed.buffer, processed.format),
+                        dimensions: `${processed.width}x${processed.height}`,
+                        width: processed.width,
+                        height: processed.height
+                    };
+                }
+
+                // Save to history
+                try {
+                    const dataDir = path.join(process.cwd(), 'data');
+                    const historyPath = path.join(dataDir, 'history.json');
+
+                    if (!fs.existsSync(dataDir)) {
+                        fs.mkdirSync(dataDir);
+                    }
+
+                    let history = [];
+                    if (fs.existsSync(historyPath)) {
+                        const fileContent = fs.readFileSync(historyPath, 'utf-8');
+                        history = JSON.parse(fileContent);
+                    }
+
+                    history.unshift({
+                        id: timestamp,
+                        timestamp,
+                        usage: usage_context,
+                        dimension: 'asset_set',
+                        subject,
+                        mood: mood || 'innovative',
+                        style_variant: appliedStyle,
+                        brand_theme: appliedBrandTheme,
+                        imageUrl: assetSet.master?.url || masterImageUrl,
+                        prompt,
+                        is_asset_set: true,
+                        variants: Object.keys(assetSet)
+                    });
+
+                    if (history.length > 50) {
+                        history = history.slice(0, 50);
+                    }
+
+                    fs.writeFileSync(historyPath, JSON.stringify(history, null, 2));
+                } catch (err) {
+                    console.error('Failed to save to JSON history:', err);
+                }
+
+                // Append to markdown log
+                try {
+                    const logEntry = `\n## ${timestamp} - ${usage_context} (Asset Set)\n**Subject:** ${subject}\n**Variants:** ${Object.keys(assetSet).join(', ')}\n**Mood:** ${mood || 'innovative'}\n**Style:** ${appliedStyle}\n**Prompt:**\n\`\`\`\n${prompt}\n\`\`\`\n---\n`;
+                    const logPath = path.join(process.cwd(), 'generated_history.md');
+                    fs.appendFileSync(logPath, logEntry);
+                } catch {
+                    // Silent fail for logging
+                }
+
+                return NextResponse.json({
+                    success: true,
+                    generate_mode: 'asset_set',
+                    asset_set: assetSet,
+                    prompt_used: prompt,
+                    metadata: {
+                        format: output_format,
+                        generated_at: timestamp,
+                        model: 'dall-e-3',
+                        style_applied: appliedStyle,
+                        mood_applied: mood || 'innovative',
+                        asset_type_applied: appliedAssetType,
+                        brand_theme_applied: appliedBrandTheme,
+                        variants_generated: Object.keys(assetSet)
+                    },
+                    // Legacy fields for backward compatibility
+                    imageUrl: assetSet.master?.url || masterImageUrl,
+                    prompt: prompt
+                });
+
+            } catch (processError) {
+                console.error('Failed to process asset set:', processError);
+                return NextResponse.json(
+                    {
+                        success: false,
+                        error: {
+                            code: 'ASSET_SET_PROCESSING_FAILED',
+                            message: processError instanceof Error ? processError.message : 'Failed to process asset set variants'
+                        }
+                    },
+                    { status: 500 }
+                );
+            }
+        }
+
+        // Single image mode (original behavior)
+        const imageUrl = masterImageUrl;
 
         // Save to history (local JSON)
         try {
@@ -355,6 +506,7 @@ export async function POST(request: Request) {
         // Return success response with new format
         return NextResponse.json({
             success: true,
+            generate_mode: 'single',
             image_url: imageUrl,
             prompt_used: prompt,
             metadata: {

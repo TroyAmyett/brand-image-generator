@@ -14,10 +14,20 @@ const USAGE_OPTIONS = [
 ];
 
 const DIMENSION_OPTIONS = [
-  'Full screen (16:9)',
-  'Square (1:1)',
-  'Rectangle (4:3)',
-  'Vertical (9:16)'
+  { value: 'Full screen (16:9)', label: 'Full screen (16:9)', size: '1792x1024' },
+  { value: 'Hero Wide (21:9)', label: 'Hero Wide (21:9)', size: '1792x768' },
+  { value: 'Square (1:1)', label: 'Square (1:1)', size: '1024x1024' },
+  { value: 'Rectangle (4:3)', label: 'Rectangle (4:3)', size: '1024x768' },
+  { value: 'Card (3:2)', label: 'Card (3:2)', size: '600x400' },
+  { value: 'Vertical (9:16)', label: 'Vertical (9:16)', size: '1024x1792' },
+];
+
+const ASSET_SET_VARIANTS = [
+  { key: 'master', label: 'Master (16:9)', size: '1792x1024', defaultChecked: true },
+  { key: 'hero_wide', label: 'Hero Wide (21:9)', size: '1792x768', defaultChecked: true },
+  { key: 'card_4x3', label: 'Card (4:3)', size: '800x600', defaultChecked: true },
+  { key: 'card_3x2', label: 'Card (3:2)', size: '600x400', defaultChecked: false },
+  { key: 'square', label: 'Square (1:1)', size: '600x600', defaultChecked: false },
 ];
 
 const ASSET_TYPE_OPTIONS = [
@@ -49,16 +59,36 @@ interface HistoryItem {
   prompt: string;
 }
 
+interface AssetSetItem {
+  url: string;
+  dimensions: string;
+  width: number;
+  height: number;
+}
+
+interface GenerateResult {
+  imageUrl: string;
+  prompt: string;
+  generate_mode?: 'single' | 'asset_set';
+  asset_set?: Record<string, AssetSetItem>;
+}
+
 export default function Home() {
   const [usage, setUsage] = useState(USAGE_OPTIONS[0]);
   const [assetType, setAssetType] = useState(ASSET_TYPE_OPTIONS[0].value);
   const [brandTheme, setBrandTheme] = useState(BRAND_THEME_OPTIONS[0].value);
-  const [dimension, setDimension] = useState(DIMENSION_OPTIONS[0]);
+  const [dimension, setDimension] = useState(DIMENSION_OPTIONS[0].value);
   const [subject, setSubject] = useState('');
   const [details, setDetails] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingText, setLoadingText] = useState('Initializing...');
-  const [result, setResult] = useState<{ imageUrl: string; prompt: string } | null>(null);
+  const [result, setResult] = useState<GenerateResult | null>(null);
+
+  // Asset Set mode state
+  const [generateMode, setGenerateMode] = useState<'single' | 'asset_set'>('single');
+  const [selectedVariants, setSelectedVariants] = useState<string[]>(
+    ASSET_SET_VARIANTS.filter(v => v.defaultChecked).map(v => v.key)
+  );
   const [imageLoaded, setImageLoaded] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -196,38 +226,81 @@ export default function Home() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Toggle variant selection for Asset Set mode
+  const toggleVariant = (variantKey: string) => {
+    setSelectedVariants(prev => {
+      if (prev.includes(variantKey)) {
+        // Don't allow deselecting master
+        if (variantKey === 'master') return prev;
+        return prev.filter(v => v !== variantKey);
+      } else {
+        return [...prev, variantKey];
+      }
+    });
+  };
+
+  // Download for data URL images (Asset Set)
+  const handleDownloadDataUrl = (dataUrl: string, variantKey: string) => {
+    const seoFilename = `${subject.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}-${variantKey}.png`;
+    const link = document.createElement('a');
+    link.href = dataUrl;
+    link.download = seoFilename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('[Generate] Starting - single API call');
+    console.log(`[Generate] Starting - ${generateMode} mode`);
     setLoading(true);
     setResult(null);
     setImageLoaded(false);
 
     try {
       console.log('[Generate] Calling /api/generate...');
+      const requestBody: Record<string, unknown> = {
+        usage,
+        asset_type: assetType,
+        brand_theme: brandTheme,
+        subject,
+        additionalDetails: details,
+        generate_mode: generateMode,
+      };
+
+      if (generateMode === 'asset_set') {
+        requestBody.asset_set_variants = selectedVariants;
+      } else {
+        requestBody.dimension = dimension;
+      }
+
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          usage,
-          asset_type: assetType,
-          brand_theme: brandTheme,
-          dimension,
-          subject,
-          additionalDetails: details,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await response.json();
-      console.log('[Generate] Response received:', { success: data.success, hasImageUrl: !!data.imageUrl, hasImage_url: !!data.image_url });
+      console.log('[Generate] Response received:', { success: data.success, generate_mode: data.generate_mode, hasAssetSet: !!data.asset_set });
       if (data.success) {
         // Support both legacy (imageUrl) and new (image_url) response formats
         const imageUrl = data.imageUrl || data.image_url;
         const prompt = data.prompt || data.prompt_used;
-        console.log('[Generate] Setting result with imageUrl:', imageUrl?.substring(0, 50) + '...');
-        setResult({ imageUrl, prompt });
+
+        if (data.generate_mode === 'asset_set' && data.asset_set) {
+          console.log('[Generate] Asset Set received with variants:', Object.keys(data.asset_set));
+          setResult({
+            imageUrl: data.asset_set.master?.url || imageUrl,
+            prompt,
+            generate_mode: 'asset_set',
+            asset_set: data.asset_set
+          });
+        } else {
+          console.log('[Generate] Single image received');
+          setResult({ imageUrl, prompt, generate_mode: 'single' });
+        }
         fetchHistory(); // Refresh history
       } else {
         const errorMsg = data.error?.message || data.error || 'Something went wrong';
@@ -379,18 +452,67 @@ export default function Home() {
 
               <div className={styles.formGroup}>
                 <label className={styles.label}>
-                  Dimensions
+                  Generate Mode
                 </label>
-                <select
-                  value={dimension}
-                  onChange={(e) => setDimension(e.target.value)}
-                  className={styles.select}
-                >
-                  {DIMENSION_OPTIONS.map((opt) => (
-                    <option key={opt} value={opt}>{opt}</option>
-                  ))}
-                </select>
+                <div className={styles.toggleGroup}>
+                  <button
+                    type="button"
+                    className={`${styles.toggleButton} ${generateMode === 'single' ? styles.toggleActive : ''}`}
+                    onClick={() => setGenerateMode('single')}
+                  >
+                    Single Image
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.toggleButton} ${generateMode === 'asset_set' ? styles.toggleActive : ''}`}
+                    onClick={() => setGenerateMode('asset_set')}
+                  >
+                    Asset Set
+                  </button>
+                </div>
               </div>
+
+              {generateMode === 'single' ? (
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>
+                    Dimensions
+                  </label>
+                  <select
+                    value={dimension}
+                    onChange={(e) => setDimension(e.target.value)}
+                    className={styles.select}
+                  >
+                    {DIMENSION_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label} - {opt.size}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>
+                    Asset Set Variants
+                  </label>
+                  <div className={styles.checkboxGroup}>
+                    {ASSET_SET_VARIANTS.map((variant) => (
+                      <label key={variant.key} className={styles.checkboxLabel}>
+                        <input
+                          type="checkbox"
+                          checked={selectedVariants.includes(variant.key)}
+                          onChange={() => toggleVariant(variant.key)}
+                          disabled={variant.key === 'master'}
+                          className={styles.checkbox}
+                        />
+                        <span className={styles.checkboxText}>
+                          {variant.label}
+                          <span className={styles.checkboxSize}>{variant.size}</span>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className={styles.formGroup}>
                 <label className={styles.label}>
@@ -434,95 +556,137 @@ export default function Home() {
             <h2 className={styles.cardHeader}>
               <span className={styles.stepNumber}>2</span>
               Visual Output
+              {result?.generate_mode === 'asset_set' && (
+                <span className={styles.assetSetBadge}>Asset Set</span>
+              )}
             </h2>
 
-            <div className={styles.resultContainer} style={{ marginBottom: result?.imageUrl ? '1rem' : 0 }}>
-              {result?.imageUrl ? (
-                <>
-                  <div
-                    className={`${styles.imageWrapper} ${imageLoaded ? styles.loaded : ''}`}
-                    onClick={() => setShowPreview(true)}
-                    style={{ cursor: 'pointer' }}
-                    title="Click to preview full size"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={result.imageUrl}
-                      alt={subject}
-                      className={styles.imageResult}
-                      onLoad={() => setImageLoaded(true)}
-                    />
-                  </div>
-                  {!imageLoaded && (
-                    <div className={styles.loadingOverlay}>
-                      <div className={styles.spinner}></div>
-                      <p>Loading Image...</p>
+            {/* Asset Set Display */}
+            {result?.generate_mode === 'asset_set' && result.asset_set ? (
+              <div className={styles.assetSetGrid}>
+                {Object.entries(result.asset_set).map(([key, asset]) => {
+                  const variantInfo = ASSET_SET_VARIANTS.find(v => v.key === key);
+                  return (
+                    <div key={key} className={styles.assetSetItem}>
+                      <div className={styles.assetSetImageWrapper}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={asset.url}
+                          alt={`${subject} - ${variantInfo?.label || key}`}
+                          className={styles.assetSetImage}
+                        />
+                      </div>
+                      <div className={styles.assetSetInfo}>
+                        <span className={styles.assetSetLabel}>{variantInfo?.label || key}</span>
+                        <span className={styles.assetSetDimensions}>{asset.dimensions}</span>
+                      </div>
+                      <button
+                        onClick={() => handleDownloadDataUrl(asset.url, key)}
+                        className={styles.assetSetDownload}
+                        title={`Download ${variantInfo?.label || key}`}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                          <polyline points="7 10 12 15 17 10"></polyline>
+                          <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              /* Single Image Display */
+              <>
+                <div className={styles.resultContainer} style={{ marginBottom: result?.imageUrl ? '1rem' : 0 }}>
+                  {result?.imageUrl ? (
+                    <>
+                      <div
+                        className={`${styles.imageWrapper} ${imageLoaded ? styles.loaded : ''}`}
+                        onClick={() => setShowPreview(true)}
+                        style={{ cursor: 'pointer' }}
+                        title="Click to preview full size"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={result.imageUrl}
+                          alt={subject}
+                          className={styles.imageResult}
+                          onLoad={() => setImageLoaded(true)}
+                        />
+                      </div>
+                      {!imageLoaded && (
+                        <div className={styles.loadingOverlay}>
+                          <div className={styles.spinner}></div>
+                          <p>Loading Image...</p>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className={styles.placeholder}>
+                      {!loading && (
+                        <>
+                          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.2, marginBottom: '1rem' }}>
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                          </svg>
+                          <p>Generated image will appear here.</p>
+                        </>
+                      )}
+                      {loading && (
+                        <>
+                          <div className={styles.spinner}></div>
+                          <p className={styles.loadingText}>{loadingText}</p>
+                        </>
+                      )}
                     </div>
                   )}
-                </>
-              ) : (
-                <div className={styles.placeholder}>
-                  {!loading && (
-                    <>
-                      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.2, marginBottom: '1rem' }}>
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                        <polyline points="21 15 16 10 5 21"></polyline>
-                      </svg>
-                      <p>Generated image will appear here.</p>
-                    </>
-                  )}
-                  {loading && (
-                    <>
-                      <div className={styles.spinner}></div>
-                      <p className={styles.loadingText}>{loadingText}</p>
-                    </>
-                  )}
                 </div>
-              )}
-            </div>
 
-            {result?.imageUrl && (
-              <div className={styles.actionButtons}>
-                <button onClick={() => handleDownload()} className={styles.secondaryButton}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                  </svg>
-                  Download
-                </button>
-                <button
-                  onClick={() => setShowRevision(!showRevision)}
-                  className={styles.secondaryButton}
-                  disabled={loading}
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                  </svg>
-                  Revise
-                </button>
-              </div>
-            )}
+                {result?.imageUrl && (
+                  <div className={styles.actionButtons}>
+                    <button onClick={() => handleDownload()} className={styles.secondaryButton}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                      </svg>
+                      Download
+                    </button>
+                    <button
+                      onClick={() => setShowRevision(!showRevision)}
+                      className={styles.secondaryButton}
+                      disabled={loading}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                      </svg>
+                      Revise
+                    </button>
+                  </div>
+                )}
 
-            {showRevision && result?.imageUrl && (
-              <div className={styles.revisionContainer}>
-                <textarea
-                  value={revisionText}
-                  onChange={(e) => setRevisionText(e.target.value)}
-                  placeholder="Describe what changes you want... (e.g., 'Make it more blue', 'Add more data streams', 'Remove the cloud logo')"
-                  rows={3}
-                  className={styles.textarea}
-                />
-                <button
-                  onClick={handleRevision}
-                  className={styles.button}
-                  disabled={loading || !revisionText.trim()}
-                >
-                  {loading ? 'Generating...' : 'Generate Revision'}
-                </button>
-              </div>
+                {showRevision && result?.imageUrl && (
+                  <div className={styles.revisionContainer}>
+                    <textarea
+                      value={revisionText}
+                      onChange={(e) => setRevisionText(e.target.value)}
+                      placeholder="Describe what changes you want... (e.g., 'Make it more blue', 'Add more data streams', 'Remove the cloud logo')"
+                      rows={3}
+                      className={styles.textarea}
+                    />
+                    <button
+                      onClick={handleRevision}
+                      className={styles.button}
+                      disabled={loading || !revisionText.trim()}
+                    >
+                      {loading ? 'Generating...' : 'Generate Revision'}
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </section>
 

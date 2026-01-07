@@ -658,3 +658,180 @@
   width: auto;
   padding: 0.75rem 1.5rem;
 }
+
+/* Generate Mode Toggle */
+.toggleGroup {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.toggleButton {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.toggleButton:first-child {
+  border-right: 1px solid var(--border);
+}
+
+.toggleButton:hover {
+  background: rgba(100, 255, 218, 0.05);
+  color: #e2e8f0;
+}
+
+.toggleActive {
+  background: rgba(100, 255, 218, 0.15);
+  color: var(--primary);
+}
+
+/* Checkbox Group for Asset Set Variants */
+.checkboxGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.checkboxLabel:hover {
+  background: rgba(100, 255, 218, 0.05);
+  border-color: rgba(100, 255, 218, 0.3);
+}
+
+.checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.checkbox:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.checkboxText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  color: #e2e8f0;
+  font-size: 0.9rem;
+}
+
+.checkboxSize {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+/* Asset Set Badge */
+.assetSetBadge {
+  background: rgba(100, 255, 218, 0.15);
+  color: var(--primary);
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  margin-left: auto;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Asset Set Grid */
+.assetSetGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  padding: 0.5rem 0;
+}
+
+.assetSetItem {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.assetSetItem:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+
+.assetSetImageWrapper {
+  width: 100%;
+  aspect-ratio: 16/9;
+  background: #000;
+  overflow: hidden;
+}
+
+.assetSetImage {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.assetSetInfo {
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--border);
+}
+
+.assetSetLabel {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #e2e8f0;
+}
+
+.assetSetDimensions {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-family: var(--font-mono);
+}
+
+.assetSetDownload {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.375rem;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s;
+  opacity: 0;
+}
+
+.assetSetItem:hover .assetSetDownload {
+  opacity: 1;
+}
+
+.assetSetDownload:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #0a192f;
+}
