@@ -121,6 +121,7 @@ export async function POST(request: Request) {
         // Support both new API format (snake_case) and legacy UI format (camelCase)
         const usage_context = body.usage_context || body.usage;
         const dimensions = body.dimensions || body.dimension;
+        const title = body.title as string | undefined;
         const subject = body.subject;
         const mood = body.mood as Mood | undefined;
         const style_variant = body.style_variant as StyleVariant | undefined;
@@ -137,6 +138,7 @@ export async function POST(request: Request) {
         const missingFields: string[] = [];
         if (!usage_context) missingFields.push('usage_context');
         if (!dimensions && generate_mode !== 'asset_set') missingFields.push('dimensions');
+        if (!title) missingFields.push('title');
         if (!subject) missingFields.push('subject');
 
         if (missingFields.length > 0) {
@@ -391,6 +393,7 @@ export async function POST(request: Request) {
                         timestamp,
                         usage: usage_context,
                         dimension: 'asset_set',
+                        title,
                         subject,
                         mood: mood || 'innovative',
                         style_variant: appliedStyle,
@@ -412,7 +415,7 @@ export async function POST(request: Request) {
 
                 // Append to markdown log
                 try {
-                    const logEntry = `\n## ${timestamp} - ${usage_context} (Asset Set)\n**Subject:** ${subject}\n**Variants:** ${Object.keys(assetSet).join(', ')}\n**Mood:** ${mood || 'innovative'}\n**Style:** ${appliedStyle}\n**Prompt:**\n\`\`\`\n${prompt}\n\`\`\`\n---\n`;
+                    const logEntry = `\n## ${timestamp} - ${usage_context} (Asset Set)\n**Title:** ${title}\n**Subject:** ${subject}\n**Variants:** ${Object.keys(assetSet).join(', ')}\n**Mood:** ${mood || 'innovative'}\n**Style:** ${appliedStyle}\n**Prompt:**\n\`\`\`\n${prompt}\n\`\`\`\n---\n`;
                     const logPath = path.join(process.cwd(), 'generated_history.md');
                     fs.appendFileSync(logPath, logEntry);
                 } catch {
@@ -423,8 +426,10 @@ export async function POST(request: Request) {
                     success: true,
                     generate_mode: 'asset_set',
                     asset_set: assetSet,
+                    title,
                     prompt_used: prompt,
                     metadata: {
+                        title,
                         format: output_format,
                         generated_at: timestamp,
                         model: 'dall-e-3',
@@ -477,6 +482,7 @@ export async function POST(request: Request) {
                 timestamp,
                 usage: usage_context,
                 dimension: dimensions,
+                title,
                 subject,
                 mood: mood || 'innovative',
                 style_variant: appliedStyle,
@@ -496,7 +502,7 @@ export async function POST(request: Request) {
 
         // Append to markdown log
         try {
-            const logEntry = `\n## ${timestamp} - ${usage_context}\n**Subject:** ${subject}\n**Dimensions:** ${dimensions}\n**Mood:** ${mood || 'innovative'}\n**Style:** ${appliedStyle}\n**URL:** ${imageUrl}\n**Prompt:**\n\`\`\`\n${prompt}\n\`\`\`\n---\n`;
+            const logEntry = `\n## ${timestamp} - ${usage_context}\n**Title:** ${title}\n**Subject:** ${subject}\n**Dimensions:** ${dimensions}\n**Mood:** ${mood || 'innovative'}\n**Style:** ${appliedStyle}\n**URL:** ${imageUrl}\n**Prompt:**\n\`\`\`\n${prompt}\n\`\`\`\n---\n`;
             const logPath = path.join(process.cwd(), 'generated_history.md');
             fs.appendFileSync(logPath, logEntry);
         } catch {
@@ -508,8 +514,10 @@ export async function POST(request: Request) {
             success: true,
             generate_mode: 'single',
             image_url: imageUrl,
+            title,
             prompt_used: prompt,
             metadata: {
+                title,
                 dimensions: getReadableDimensions(size),
                 format: output_format,
                 generated_at: timestamp,

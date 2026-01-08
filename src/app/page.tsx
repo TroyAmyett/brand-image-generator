@@ -54,6 +54,7 @@ interface HistoryItem {
   timestamp: string;
   usage: string;
   dimension: string;
+  title?: string;
   subject: string;
   imageUrl: string;
   prompt: string;
@@ -73,11 +74,21 @@ interface GenerateResult {
   asset_set?: Record<string, AssetSetItem>;
 }
 
+// Slugify helper for SEO filenames
+const slugify = (text: string): string => {
+  return text
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+};
+
 export default function Home() {
   const [usage, setUsage] = useState(USAGE_OPTIONS[0]);
   const [assetType, setAssetType] = useState(ASSET_TYPE_OPTIONS[0].value);
   const [brandTheme, setBrandTheme] = useState(BRAND_THEME_OPTIONS[0].value);
   const [dimension, setDimension] = useState(DIMENSION_OPTIONS[0].value);
+  const [title, setTitle] = useState('');
   const [subject, setSubject] = useState('');
   const [details, setDetails] = useState('');
   const [loading, setLoading] = useState(false);
@@ -183,18 +194,13 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [loading]);
 
-  const handleDownload = async (imageUrl?: string, imageSubject?: string) => {
+  const handleDownload = async (imageUrl?: string, imageTitle?: string) => {
     const urlToUse = imageUrl || result?.imageUrl;
     if (!urlToUse) return;
 
     try {
-      const subjectToUse = imageSubject || subject;
-      const seoFilename = subjectToUse
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '')
-        + '.png';
+      const titleToUse = imageTitle || title;
+      const seoFilename = slugify(titleToUse) + '.png';
 
       const response = await fetch('/api/download', {
         method: 'POST',
@@ -241,7 +247,7 @@ export default function Home() {
 
   // Download for data URL images (Asset Set)
   const handleDownloadDataUrl = (dataUrl: string, variantKey: string) => {
-    const seoFilename = `${subject.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}-${variantKey}.png`;
+    const seoFilename = `${slugify(title)}-${variantKey}.png`;
     const link = document.createElement('a');
     link.href = dataUrl;
     link.download = seoFilename;
@@ -263,6 +269,7 @@ export default function Home() {
         usage,
         asset_type: assetType,
         brand_theme: brandTheme,
+        title,
         subject,
         additionalDetails: details,
         generate_mode: generateMode,
@@ -339,6 +346,7 @@ export default function Home() {
           asset_type: assetType,
           brand_theme: brandTheme,
           dimension,
+          title,
           subject,
           additionalDetails: revisedDetails,
         }),
@@ -365,6 +373,7 @@ export default function Home() {
 
   const selectFromHistory = (item: HistoryItem) => {
     setResult({ imageUrl: item.imageUrl, prompt: item.prompt });
+    setTitle(item.title || item.subject); // Fallback to subject for older history items
     setSubject(item.subject);
     setUsage(item.usage);
     setDimension(item.dimension);
@@ -516,13 +525,27 @@ export default function Home() {
 
               <div className={styles.formGroup}>
                 <label className={styles.label}>
-                  Subject / Topic
+                  Title (SEO filename)
+                </label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g., 'astronaut-bus-stop-cta'"
+                  required
+                  className={styles.input}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label}>
+                  Subject (image description)
                 </label>
                 <input
                   type="text"
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
-                  placeholder="e.g., 'Modern optimization dashboard'"
+                  placeholder="e.g., 'Modern optimization dashboard with AI analytics'"
                   required
                   className={styles.input}
                 />
@@ -733,9 +756,9 @@ export default function Home() {
               {history.map((item, idx) => (
                 <div key={idx} className={styles.historyItem} onClick={() => selectFromHistory(item)}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={item.imageUrl} alt={item.subject} className={styles.historyThumb} />
+                  <img src={item.imageUrl} alt={item.title || item.subject} className={styles.historyThumb} />
                   <div className={styles.historyInfo}>
-                    <p className={styles.historySubject}>{item.subject}</p>
+                    <p className={styles.historySubject}>{item.title || item.subject}</p>
                     <div className={styles.historyMeta}>
                       <span>{item.usage}</span>
                       <span>{new Date(item.timestamp).toLocaleDateString()}</span>
