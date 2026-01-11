@@ -1,15 +1,56 @@
 :root {
-  --background: #0a192f;
-  --foreground: #cbd5e1;
-  --primary: #64ffda;
-  --primary-hover: #4cdbb9;
-  --secondary: #112240;
-  --card-bg: #1e293b;
-  --border: #334155;
-  --font-mono: ui-monospace, Menlo, Monaco, "Cascadia Mono", "Segoe UI Mono",
-    "Roboto Mono", "Oxygen Mono", "Ubuntu Monospace", "Source Code Pro",
-    "Fira Mono", "Droid Sans Mono", "Courier New", monospace;
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* ========================================
+     Funnelists Design System v1.0
+     ======================================== */
+
+  /* Primary Palette */
+  --color-primary: #0ea5e9;           /* Cyan - main actions, links */
+  --color-primary-hover: #0284c7;     /* Darker cyan for hover */
+  --color-primary-light: #38bdf8;     /* Lighter cyan for accents */
+
+  /* Accent */
+  --color-accent: #22c55e;            /* Green - success, highlights */
+  --color-accent-hover: #16a34a;
+
+  /* Semantic */
+  --color-success: #22c55e;
+  --color-warning: #eab308;
+  --color-error: #ef4444;
+  --color-info: #0ea5e9;
+
+  /* Backgrounds */
+  --color-bg-primary: #0a0a0a;        /* Near black - main bg */
+  --color-bg-secondary: #111111;      /* Slightly lighter */
+  --color-bg-surface: #1a1a1a;        /* Cards, panels */
+  --color-bg-elevated: #262626;       /* Modals, dropdowns */
+
+  /* Borders */
+  --color-border: #2a2a2a;            /* Subtle borders */
+  --color-border-hover: #3a3a3a;
+  --color-border-focus: #0ea5e9;      /* Focus rings */
+
+  /* Text */
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #a1a1aa;
+  --color-text-muted: #71717a;
+  --color-text-inverse: #0a0a0a;
+
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+
+  /* Legacy aliases for backwards compatibility */
+  --background: var(--color-bg-primary);
+  --foreground: var(--color-text-primary);
+  --primary: var(--color-primary);
+  --primary-hover: var(--color-primary-hover);
+  --accent: var(--color-accent);
+  --accent-hover: var(--color-accent-hover);
+  --secondary: var(--color-bg-secondary);
+  --surface: var(--color-bg-surface);
+  --card-bg: var(--color-bg-surface);
+  --border: var(--color-border);
+  --muted: var(--color-text-secondary);
 }
 
 * {

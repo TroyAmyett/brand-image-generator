@@ -128,37 +128,55 @@ export async function createHeroWide(
 
 /**
  * Process master image to create all requested asset variants
+ * Optimized: processes all variants in parallel for faster generation
  */
 export async function processAssetSet(
   masterUrl: string,
   variants: string[]
 ): Promise<Record<string, ProcessedImage>> {
   const masterBuffer = await fetchImageBuffer(masterUrl);
-  const results: Record<string, ProcessedImage> = {};
 
-  // Always include master
+  // Get master metadata once (reuse for all operations)
   const masterMetadata = await sharp(masterBuffer).metadata();
-  results.master = {
-    buffer: masterBuffer,
-    width: masterMetadata.width || 1792,
-    height: masterMetadata.height || 1024,
-    format: 'png'
-  };
 
-  // Process each requested variant
+  // Build array of variant processing promises (parallel execution)
+  const variantPromises: Promise<{ key: string; result: ProcessedImage }>[] = [];
+
   for (const variantKey of variants) {
-    if (variantKey === 'master') continue; // Already added
+    if (variantKey === 'master') continue; // Handle master separately
 
     const variant = ASSET_VARIANTS[variantKey];
     if (!variant) continue;
 
-    if (variantKey === 'hero_wide') {
-      // Use center crop for hero wide
-      results.hero_wide = await createHeroWide(masterBuffer, 'crop');
-    } else {
-      // Center crop for all other variants
-      results[variantKey] = await centerCrop(masterBuffer, variant.width, variant.height);
+    // Create promise for each variant (will run in parallel)
+    const promise = (async () => {
+      let result: ProcessedImage;
+      if (variantKey === 'hero_wide') {
+        result = await createHeroWide(masterBuffer, 'crop');
+      } else {
+        result = await centerCrop(masterBuffer, variant.width, variant.height);
+      }
+      return { key: variantKey, result };
+    })();
+
+    variantPromises.push(promise);
+  }
+
+  // Process all variants in parallel
+  const processedVariants = await Promise.all(variantPromises);
+
+  // Build results object
+  const results: Record<string, ProcessedImage> = {
+    master: {
+      buffer: masterBuffer,
+      width: masterMetadata.width || 1792,
+      height: masterMetadata.height || 1024,
+      format: 'png'
     }
+  };
+
+  for (const { key, result } of processedVariants) {
+    results[key] = result;
   }
 
   return results;
