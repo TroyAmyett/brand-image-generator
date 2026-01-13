@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { generatePrompt, GenerateImageParams, StyleVariant, Mood, AssetType, BrandTheme } from '@/lib/prompt';
 import { processAssetSet, bufferToDataUrl, ASSET_VARIANTS } from '@/lib/imageProcessor';
+import OpenAI from 'openai';
 import fs from 'fs';
 import path from 'path';
 
@@ -36,9 +37,11 @@ const VALID_ASSET_TYPES: AssetType[] = [
     'timeline', 'diagram', 'quote_card', 'stats_highlight', 'icon_set'
 ];
 
-const VALID_BRAND_THEMES: BrandTheme[] = ['salesforce', 'general_ai', 'blockchain', 'neutral'];
+const VALID_BRAND_THEMES: BrandTheme[] = ['salesforce', 'general_ai', 'blockchain', 'neutral', 'minimal', 'photorealistic'];
 
 const VALID_OUTPUT_FORMATS = ['png', 'jpg', 'webp'];
+
+const VALID_IMAGE_PROVIDERS = ['openai', 'anthropic', 'stability', 'replicate'];
 
 // Helper to check API key authentication
 function authenticateRequest(request: Request): boolean {
@@ -129,6 +132,7 @@ export async function POST(request: Request) {
         const brand_theme = body.brand_theme as BrandTheme | undefined;
         const additional_details = body.additional_details || body.additionalDetails;
         const output_format = body.output_format || 'png';
+        const image_provider = body.image_provider || 'openai';
 
         // Asset Set mode parameters
         const generate_mode = body.generate_mode || 'single'; // 'single' or 'asset_set'
@@ -283,6 +287,34 @@ export async function POST(request: Request) {
             );
         }
 
+        // Validate image_provider
+        if (!VALID_IMAGE_PROVIDERS.includes(image_provider)) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    error: {
+                        code: 'INVALID_IMAGE_PROVIDER',
+                        message: `Invalid image_provider. Must be one of: ${VALID_IMAGE_PROVIDERS.join(', ')}`
+                    }
+                },
+                { status: 400 }
+            );
+        }
+
+        // Check provider availability (only openai is currently supported)
+        if (image_provider !== 'openai') {
+            return NextResponse.json(
+                {
+                    success: false,
+                    error: {
+                        code: 'PROVIDER_NOT_AVAILABLE',
+                        message: `Image provider '${image_provider}' is not yet available. Currently only 'openai' is supported.`
+                    }
+                },
+                { status: 400 }
+            );
+        }
+
         // Check OpenAI API key
         if (!process.env.OPENAI_API_KEY) {
             return NextResponse.json(
@@ -316,7 +348,6 @@ export async function POST(request: Request) {
         const size = isAssetSet ? "1792x1024" : getDalleSize(dimensions);
 
         // Initialize OpenAI and generate image
-        const { OpenAI } = await import('openai');
         const openai = new OpenAI({
             apiKey: process.env.OPENAI_API_KEY,
         });
@@ -432,6 +463,7 @@ export async function POST(request: Request) {
                         title,
                         format: output_format,
                         generated_at: timestamp,
+                        image_provider: image_provider,
                         model: 'dall-e-3',
                         style_applied: appliedStyle,
                         mood_applied: mood || 'innovative',
@@ -521,6 +553,7 @@ export async function POST(request: Request) {
                 dimensions: getReadableDimensions(size),
                 format: output_format,
                 generated_at: timestamp,
+                image_provider: image_provider,
                 model: 'dall-e-3',
                 style_applied: appliedStyle,
                 mood_applied: mood || 'innovative',

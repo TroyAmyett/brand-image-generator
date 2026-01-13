@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import styles from './page.module.css';
 import { APP_VERSION } from '@/lib/version';
 import { brand, applyBrandColors } from '@/lib/brand';
+import { BrandLogo } from '@/components/BrandLogo';
 import {
   Settings,
   X,
@@ -59,6 +60,15 @@ const BRAND_THEME_OPTIONS = [
   { value: 'general_ai', label: 'General AI', description: 'Abstract AI core anchor' },
   { value: 'blockchain', label: 'Blockchain', description: 'Distributed ledger nodes' },
   { value: 'neutral', label: 'Neutral', description: 'No platform-specific anchor' },
+  { value: 'minimal', label: 'Minimal', description: 'Clean, abstract, no tech elements' },
+  { value: 'photorealistic', label: 'Photorealistic', description: 'Real-world photography style' },
+];
+
+const IMAGE_PROVIDER_OPTIONS = [
+  { value: 'openai', label: 'OpenAI DALL-E 3', description: 'Default, high quality' },
+  { value: 'anthropic', label: 'Anthropic Claude', description: 'Coming soon', disabled: true },
+  { value: 'stability', label: 'Stability AI', description: 'Coming soon', disabled: true },
+  { value: 'replicate', label: 'Replicate', description: 'Coming soon', disabled: true },
 ];
 
 interface HistoryItem {
@@ -98,6 +108,7 @@ export default function Home() {
   const [usage, setUsage] = useState(USAGE_OPTIONS[0]);
   const [assetType, setAssetType] = useState(ASSET_TYPE_OPTIONS[0].value);
   const [brandTheme, setBrandTheme] = useState(BRAND_THEME_OPTIONS[0].value);
+  const [imageProvider, setImageProvider] = useState(IMAGE_PROVIDER_OPTIONS[0].value);
   const [dimension, setDimension] = useState(DIMENSION_OPTIONS[0].value);
   const [title, setTitle] = useState('');
   const [subject, setSubject] = useState('');
@@ -285,6 +296,7 @@ export default function Home() {
         subject,
         additionalDetails: details,
         generate_mode: generateMode,
+        image_provider: imageProvider,
       };
 
       if (generateMode === 'asset_set') {
@@ -398,9 +410,12 @@ export default function Home() {
       <div className={styles.container}>
         <header className={styles.header}>
           <div className={styles.headerTop}>
-            <h1 className={styles.title}>
-              {brand.product.name}
-            </h1>
+            <div className={styles.logoLockup}>
+              <BrandLogo height={48} />
+              <h1 className={styles.title}>
+                {brand.product.name}
+              </h1>
+            </div>
             <button onClick={openSettings} className={styles.settingsButton} title="Settings">
               <Settings className="w-6 h-6" />
             </button>
@@ -463,6 +478,28 @@ export default function Home() {
                   {BRAND_THEME_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value} title={opt.description}>
                       {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label}>
+                  Image Provider
+                </label>
+                <select
+                  value={imageProvider}
+                  onChange={(e) => setImageProvider(e.target.value)}
+                  className={styles.select}
+                >
+                  {IMAGE_PROVIDER_OPTIONS.map((opt) => (
+                    <option
+                      key={opt.value}
+                      value={opt.value}
+                      title={opt.description}
+                      disabled={opt.disabled}
+                    >
+                      {opt.label}{opt.disabled ? ' (Coming soon)' : ''}
                     </option>
                   ))}
                 </select>

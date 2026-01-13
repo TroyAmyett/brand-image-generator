@@ -20,7 +20,7 @@ export type AssetType =
     | 'hero_image' | 'infographic' | 'process_flow' | 'comparison' | 'checklist'
     | 'timeline' | 'diagram' | 'quote_card' | 'stats_highlight' | 'icon_set';
 
-export type BrandTheme = 'salesforce' | 'general_ai' | 'blockchain' | 'neutral';
+export type BrandTheme = 'salesforce' | 'general_ai' | 'blockchain' | 'neutral' | 'minimal' | 'photorealistic';
 
 export interface GenerateImageParams {
     usage: ImageUsage;
@@ -34,16 +34,24 @@ export interface GenerateImageParams {
     is_asset_set?: boolean; // When true, generates master optimized for cropping
 }
 
-// Brand theme anchor text
+// Brand theme anchor text (for tech themes)
 const BRAND_THEME_ANCHORS: Record<BrandTheme, string> = {
     salesforce: "with a glowing Salesforce-style cloud icon as the central anchoring element",
     general_ai: "with an abstract glowing AI core as the central element",
     blockchain: "with interconnected blockchain nodes and distributed ledger chains as the central anchoring element",
-    neutral: ""
+    neutral: "",
+    minimal: "",
+    photorealistic: ""
 };
 
-// Negative prompt - constant for all generations
-const NEGATIVE_PROMPT = "no people, no faces, no robots, no humanoids, no text, no words, no letters, no blurry elements, no low resolution, no distortion, no noise, no clutter, no cartoon style, no flat illustration, no watermark, no brains, no abstract blobs";
+// Themes that use simplified non-tech templates
+const SIMPLIFIED_THEMES: BrandTheme[] = ['minimal', 'photorealistic'];
+
+// Negative prompt - for tech/cyberpunk themes
+const NEGATIVE_PROMPT_TECH = "no people, no faces, no robots, no humanoids, no text, no words, no letters, no blurry elements, no low resolution, no distortion, no noise, no clutter, no cartoon style, no flat illustration, no watermark, no brains, no abstract blobs";
+
+// Negative prompt - for photorealistic/minimal themes (simpler, no tech assumptions)
+const NEGATIVE_PROMPT_CLEAN = "no text, no words, no letters, no watermarks, no blurry elements, no low resolution, no distortion";
 
 // Generate a subject-specific focal point description
 function generateFocalPoint(subject: string): string {
@@ -88,6 +96,19 @@ const ASSET_SET_COMPOSITION = `composition with all key elements concentrated in
 export function generatePrompt(params: GenerateImageParams): string {
     const { subject, additionalDetails, brand_theme = 'salesforce', dimension, is_asset_set } = params;
 
+    // Add composition instructions based on dimension or asset set mode
+    let compositionInstruction = '';
+    if (is_asset_set) {
+        compositionInstruction = ` ${ASSET_SET_COMPOSITION}`;
+    } else if (dimension === 'hero_wide') {
+        compositionInstruction = ` ${HERO_WIDE_COMPOSITION}`;
+    }
+
+    // Use simplified templates for minimal/photorealistic themes
+    if (SIMPLIFIED_THEMES.includes(brand_theme)) {
+        return generateSimplifiedPrompt(params, compositionInstruction);
+    }
+
     // Build focal point: use additional details if provided, otherwise generate from subject
     const focalPointDescription = additionalDetails && additionalDetails.trim()
         ? additionalDetails.trim()
@@ -96,14 +117,6 @@ export function generatePrompt(params: GenerateImageParams): string {
     // Get brand theme anchor text
     const themeAnchor = BRAND_THEME_ANCHORS[brand_theme];
     const themeText = themeAnchor ? ` ${themeAnchor}` : '';
-
-    // Add composition instructions based on dimension or asset set mode
-    let compositionInstruction = '';
-    if (is_asset_set) {
-        compositionInstruction = ` ${ASSET_SET_COMPOSITION}`;
-    } else if (dimension === 'hero_wide') {
-        compositionInstruction = ` ${HERO_WIDE_COMPOSITION}`;
-    }
 
     // Master template - SUBJECT, FOCAL_POINT_DESCRIPTION, and THEME_ANCHOR change
     const prompt = `A futuristic AI ${subject}${themeText} visualized as a high-tech cyberpunk data environment.${compositionInstruction} ${focalPointDescription}
@@ -120,7 +133,43 @@ Style: ultra-detailed 3D render, sci-fi cyberpunk, enterprise AI visualization, 
 
 Hyper-realistic, extremely high detail, crisp focus, 8K resolution, professional concept art, clean and polished.
 
-${NEGATIVE_PROMPT}`;
+${NEGATIVE_PROMPT_TECH}`;
 
     return prompt;
+}
+
+/**
+ * Generate simplified prompts for minimal and photorealistic themes
+ * These avoid cyberpunk/tech visualization elements completely
+ */
+function generateSimplifiedPrompt(params: GenerateImageParams, compositionInstruction: string): string {
+    const { subject, additionalDetails, brand_theme } = params;
+
+    const details = additionalDetails && additionalDetails.trim()
+        ? ` ${additionalDetails.trim()}`
+        : '';
+
+    if (brand_theme === 'photorealistic') {
+        // Photorealistic: pure real-world photography style
+        return `Single image of ${subject}.${details}${compositionInstruction}
+
+Photorealistic photograph. Natural outdoor setting. Golden hour lighting.
+
+8K, sharp focus, shallow depth of field.
+
+${NEGATIVE_PROMPT_CLEAN}, no collage, no grid, no multiple images`;
+    }
+
+    // Minimal: clean abstract/conceptual style
+    return `A minimal, clean visualization of ${subject}.${details}${compositionInstruction}
+
+Simple, elegant composition with generous negative space. Abstract geometric shapes or subtle gradients to represent the concept. No complex machinery, no holograms, no data grids, no neon colors, no cyberpunk elements.
+
+Color palette: sophisticated and restrained. Neutral tones, muted colors. Clean white or dark backgrounds.
+
+Style: modern minimalist design, clean lines, professional and sophisticated.
+
+8K quality, crisp, polished.
+
+${NEGATIVE_PROMPT_CLEAN}`;
 }
