@@ -23,6 +23,7 @@
     "@types/sharp": "^0.31.1",
     "eslint": "^9",
     "eslint-config-next": "16.0.10",
+    "form-data": "^4.0.5",
     "typescript": "^5"
   }
 }

@@ -60,8 +60,8 @@ export const PROVIDER_CONFIGS: Record<ImageProvider, ProviderConfig> = {
         available: true,
         requiresApiKey: true,
         envKeyName: 'STABILITY_API_KEY',
-        defaultModel: 'stable-diffusion-xl-1024-v1-0',
-        supportedSizes: ['1024x1024', '1152x896', '896x1152', '1216x832', '832x1216']
+        defaultModel: 'stable-image-core',
+        supportedSizes: ['1:1', '16:9', '21:9', '2:3', '3:2', '4:5', '5:4', '9:16', '9:21']
     },
     replicate: {
         id: 'replicate',
