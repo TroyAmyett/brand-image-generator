@@ -65,12 +65,12 @@ export const PROVIDER_CONFIGS: Record<ImageProvider, ProviderConfig> = {
     },
     replicate: {
         id: 'replicate',
-        name: 'Replicate',
-        available: false,
+        name: 'Replicate (Flux)',
+        available: true,
         requiresApiKey: true,
         envKeyName: 'REPLICATE_API_KEY',
-        defaultModel: 'stability-ai/sdxl',
-        supportedSizes: ['1024x1024', '1024x1792', '1792x1024']
+        defaultModel: 'black-forest-labs/flux-schnell',
+        supportedSizes: ['1:1', '16:9', '21:9', '2:3', '3:2', '4:3', '3:4', '9:16']
     },
     anthropic: {
         id: 'anthropic',

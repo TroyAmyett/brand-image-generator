@@ -14,7 +14,10 @@ import {
   Check,
   Clock,
   Image as ImageIcon,
+  Key,
 } from 'lucide-react';
+import ApiKeySettings from '@/components/ApiKeySettings';
+import { getApiKey, hasApiKey } from '@/lib/apiKeyStorage';
 
 const USAGE_OPTIONS = [
   'Hero Background',
@@ -67,7 +70,7 @@ const BRAND_THEME_OPTIONS = [
 const IMAGE_PROVIDER_OPTIONS = [
   { value: 'openai', label: 'OpenAI DALL-E 3', description: 'Default, versatile' },
   { value: 'stability', label: 'Stability AI', description: 'Photorealistic, consistent style' },
-  { value: 'replicate', label: 'Replicate', description: 'Coming soon', disabled: true },
+  { value: 'replicate', label: 'Replicate (Flux)', description: 'Fast, artistic, high quality' },
   { value: 'anthropic', label: 'Anthropic Claude', description: 'Coming soon', disabled: true },
 ];
 
@@ -132,6 +135,8 @@ export default function Home() {
   const [styleGuide, setStyleGuide] = useState('');
   const [styleGuideLoading, setStyleGuideLoading] = useState(false);
   const [styleGuideSaved, setStyleGuideSaved] = useState(false);
+  const [showApiKeys, setShowApiKeys] = useState(false);
+  const [userApiKeyConfigured, setUserApiKeyConfigured] = useState<Record<string, boolean>>({});
 
   // Fetch History
   const fetchHistory = async () => {
@@ -192,9 +197,19 @@ export default function Home() {
     fetchStyleGuide();
   };
 
+  // Check which providers have user API keys configured
+  const checkUserApiKeys = () => {
+    const configured: Record<string, boolean> = {};
+    IMAGE_PROVIDER_OPTIONS.forEach(opt => {
+      configured[opt.value] = hasApiKey(opt.value as 'openai' | 'stability' | 'replicate' | 'anthropic');
+    });
+    setUserApiKeyConfigured(configured);
+  };
+
   useEffect(() => {
     fetchHistory();
     applyBrandColors(); // Apply white-label brand colors
+    checkUserApiKeys(); // Check for user API keys
   }, []);
 
   // Loading Cycle Logic
@@ -288,6 +303,10 @@ export default function Home() {
 
     try {
       console.log('[Generate] Calling /api/generate...');
+
+      // Get user's API key for the selected provider if available
+      const userApiKey = await getApiKey(imageProvider as 'openai' | 'stability' | 'replicate' | 'anthropic');
+
       const requestBody: Record<string, unknown> = {
         usage,
         asset_type: assetType,
@@ -298,6 +317,11 @@ export default function Home() {
         generate_mode: generateMode,
         image_provider: imageProvider,
       };
+
+      // Include user's API key if they have one configured
+      if (userApiKey) {
+        requestBody.user_api_key = userApiKey;
+      }
 
       if (generateMode === 'asset_set') {
         requestBody.asset_set_variants = selectedVariants;
@@ -487,22 +511,32 @@ export default function Home() {
                 <label className={styles.label}>
                   Image Provider
                 </label>
-                <select
-                  value={imageProvider}
-                  onChange={(e) => setImageProvider(e.target.value)}
-                  className={styles.select}
-                >
-                  {IMAGE_PROVIDER_OPTIONS.map((opt) => (
-                    <option
-                      key={opt.value}
-                      value={opt.value}
-                      title={opt.description}
-                      disabled={opt.disabled}
-                    >
-                      {opt.label}{opt.disabled ? ' (Coming soon)' : ''}
-                    </option>
-                  ))}
-                </select>
+                <div className={styles.providerSelectWrapper}>
+                  <select
+                    value={imageProvider}
+                    onChange={(e) => setImageProvider(e.target.value)}
+                    className={styles.select}
+                  >
+                    {IMAGE_PROVIDER_OPTIONS.map((opt) => (
+                      <option
+                        key={opt.value}
+                        value={opt.value}
+                        title={opt.description}
+                        disabled={opt.disabled}
+                      >
+                        {opt.label}{userApiKeyConfigured[opt.value] ? ' (Your key)' : ''}{opt.disabled ? ' (Coming soon)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setShowApiKeys(true)}
+                    className={styles.apiKeyButton}
+                    title="Manage API Keys"
+                  >
+                    <Key className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
 
               <div className={styles.formGroup}>
@@ -830,6 +864,15 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* API Keys Modal */}
+      <ApiKeySettings
+        isOpen={showApiKeys}
+        onClose={() => {
+          setShowApiKeys(false);
+          checkUserApiKeys(); // Refresh key status when modal closes
+        }}
+      />
 
       {/* Settings Modal */}
       {showSettings && (

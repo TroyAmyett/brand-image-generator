@@ -11,12 +11,14 @@ import {
 } from './types';
 import { openaiProvider } from './openai';
 import { stabilityProvider } from './stability';
+import { replicateProvider } from './replicate';
 
 // Provider registry
 const providers: Partial<Record<ImageProvider, ProviderHandler>> = {
     openai: openaiProvider,
-    stability: stabilityProvider
-    // replicate and anthropic will be added later
+    stability: stabilityProvider,
+    replicate: replicateProvider
+    // anthropic will be added when available
 };
 
 /**

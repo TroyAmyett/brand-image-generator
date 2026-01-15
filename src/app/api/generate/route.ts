@@ -133,6 +133,7 @@ export async function POST(request: Request) {
         const additional_details = body.additional_details || body.additionalDetails;
         const output_format = body.output_format || 'png';
         const image_provider = body.image_provider || 'openai';
+        const user_api_key = body.user_api_key as string | undefined; // User's own API key
 
         // Asset Set mode parameters
         const generate_mode = body.generate_mode || 'single'; // 'single' or 'asset_set'
@@ -317,19 +318,27 @@ export async function POST(request: Request) {
         }
 
         // Check API key for selected provider
+        // User can provide their own API key, or fall back to server config
         const apiKeyEnvVar = providerConfig.envKeyName;
-        if (!process.env[apiKeyEnvVar]) {
+        const hasUserKey = !!user_api_key;
+        const hasServerKey = !!process.env[apiKeyEnvVar];
+
+        if (!hasUserKey && !hasServerKey) {
             return NextResponse.json(
                 {
                     success: false,
                     error: {
-                        code: 'SERVER_CONFIG_ERROR',
-                        message: `${providerConfig.name} API key not configured on server. Set ${apiKeyEnvVar} environment variable.`
+                        code: 'NO_API_KEY',
+                        message: `No API key available for ${providerConfig.name}. Either configure your own key in settings, or contact the administrator.`
                     }
                 },
-                { status: 500 }
+                { status: 400 }
             );
         }
+
+        // Determine which key to use (user key takes priority)
+        const effectiveApiKey = user_api_key || process.env[apiKeyEnvVar];
+        const keySource = hasUserKey ? 'user' : 'server';
 
         // Build prompt using the updated prompt generator
         const isAssetSet = generate_mode === 'asset_set';
@@ -350,7 +359,7 @@ export async function POST(request: Request) {
         const size = isAssetSet ? "1792x1024" : getDalleSize(dimensions);
         const [width, height] = size.split('x').map(Number);
 
-        console.log(`[API] Generating image - Provider: ${image_provider}, Mode: ${generate_mode}, Size: ${size}, Style: ${style_variant || 'auto'}, Mood: ${mood || 'innovative'}`);
+        console.log(`[API] Generating image - Provider: ${image_provider}, Mode: ${generate_mode}, Size: ${size}, Style: ${style_variant || 'auto'}, Mood: ${mood || 'innovative'}, Key source: ${keySource}`);
 
         // Generate image using the provider abstraction
         const generationResult = await generateImage({
@@ -359,7 +368,8 @@ export async function POST(request: Request) {
             width,
             height,
             quality: 'hd',
-            style: 'natural'
+            style: 'natural',
+            apiKey: effectiveApiKey // Pass the API key (user or server)
         });
 
         if (!generationResult.success) {
