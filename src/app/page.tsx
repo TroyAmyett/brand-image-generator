@@ -65,10 +65,10 @@ const BRAND_THEME_OPTIONS = [
 ];
 
 const IMAGE_PROVIDER_OPTIONS = [
-  { value: 'openai', label: 'OpenAI DALL-E 3', description: 'Default, high quality' },
-  { value: 'anthropic', label: 'Anthropic Claude', description: 'Coming soon', disabled: true },
-  { value: 'stability', label: 'Stability AI', description: 'Coming soon', disabled: true },
+  { value: 'openai', label: 'OpenAI DALL-E 3', description: 'Default, versatile' },
+  { value: 'stability', label: 'Stability AI', description: 'Photorealistic, consistent style' },
   { value: 'replicate', label: 'Replicate', description: 'Coming soon', disabled: true },
+  { value: 'anthropic', label: 'Anthropic Claude', description: 'Coming soon', disabled: true },
 ];
 
 interface HistoryItem {

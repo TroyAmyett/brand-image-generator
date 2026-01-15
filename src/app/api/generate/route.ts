@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { generatePrompt, GenerateImageParams, StyleVariant, Mood, AssetType, BrandTheme } from '@/lib/prompt';
 import { processAssetSet, bufferToDataUrl, ASSET_VARIANTS } from '@/lib/imageProcessor';
-import OpenAI from 'openai';
+import { generateImage, ImageProvider, PROVIDER_CONFIGS } from '@/lib/providers';
 import fs from 'fs';
 import path from 'path';
 
@@ -301,28 +301,30 @@ export async function POST(request: Request) {
             );
         }
 
-        // Check provider availability (only openai is currently supported)
-        if (image_provider !== 'openai') {
+        // Check provider availability
+        const providerConfig = PROVIDER_CONFIGS[image_provider as ImageProvider];
+        if (!providerConfig || !providerConfig.available) {
             return NextResponse.json(
                 {
                     success: false,
                     error: {
                         code: 'PROVIDER_NOT_AVAILABLE',
-                        message: `Image provider '${image_provider}' is not yet available. Currently only 'openai' is supported.`
+                        message: `Image provider '${image_provider}' is not yet available.`
                     }
                 },
                 { status: 400 }
             );
         }
 
-        // Check OpenAI API key
-        if (!process.env.OPENAI_API_KEY) {
+        // Check API key for selected provider
+        const apiKeyEnvVar = providerConfig.envKeyName;
+        if (!process.env[apiKeyEnvVar]) {
             return NextResponse.json(
                 {
                     success: false,
                     error: {
                         code: 'SERVER_CONFIG_ERROR',
-                        message: 'OpenAI API key not configured on server'
+                        message: `${providerConfig.name} API key not configured on server. Set ${apiKeyEnvVar} environment variable.`
                     }
                 },
                 { status: 500 }
@@ -346,24 +348,33 @@ export async function POST(request: Request) {
         const prompt = generatePrompt(params);
         // Asset set always generates at 1792x1024 (master 16:9)
         const size = isAssetSet ? "1792x1024" : getDalleSize(dimensions);
+        const [width, height] = size.split('x').map(Number);
 
-        // Initialize OpenAI and generate image
-        const openai = new OpenAI({
-            apiKey: process.env.OPENAI_API_KEY,
-        });
+        console.log(`[API] Generating image - Provider: ${image_provider}, Mode: ${generate_mode}, Size: ${size}, Style: ${style_variant || 'auto'}, Mood: ${mood || 'innovative'}`);
 
-        console.log(`[API] Generating image - Mode: ${generate_mode}, Size: ${size}, Style: ${style_variant || 'auto'}, Mood: ${mood || 'innovative'}`);
-
-        const response = await openai.images.generate({
-            model: "dall-e-3",
+        // Generate image using the provider abstraction
+        const generationResult = await generateImage({
+            provider: image_provider as ImageProvider,
             prompt: prompt,
-            size: size,
-            quality: "hd",
-            style: "natural", // Use natural style to reduce text artifacts
-            n: 1,
+            width,
+            height,
+            quality: 'hd',
+            style: 'natural'
         });
 
-        const masterImageUrl = response.data?.[0]?.url;
+        if (!generationResult.success) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    error: generationResult.error
+                },
+                { status: 500 }
+            );
+        }
+
+        // Get image URL or base64 from result
+        const masterImageUrl = generationResult.imageUrl || generationResult.imageBase64;
+        const usedModel = generationResult.model || providerConfig.defaultModel || 'unknown';
 
         if (!masterImageUrl) {
             return NextResponse.json(
@@ -371,7 +382,7 @@ export async function POST(request: Request) {
                     success: false,
                     error: {
                         code: 'GENERATION_FAILED',
-                        message: 'No image URL returned from DALL-E API'
+                        message: 'No image returned from provider'
                     }
                 },
                 { status: 500 }
@@ -464,7 +475,7 @@ export async function POST(request: Request) {
                         format: output_format,
                         generated_at: timestamp,
                         image_provider: image_provider,
-                        model: 'dall-e-3',
+                        model: usedModel,
                         style_applied: appliedStyle,
                         mood_applied: mood || 'innovative',
                         asset_type_applied: appliedAssetType,
@@ -554,7 +565,7 @@ export async function POST(request: Request) {
                 format: output_format,
                 generated_at: timestamp,
                 image_provider: image_provider,
-                model: 'dall-e-3',
+                model: usedModel,
                 style_applied: appliedStyle,
                 mood_applied: mood || 'innovative',
                 asset_type_applied: appliedAssetType,
