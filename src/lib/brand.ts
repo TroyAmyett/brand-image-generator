@@ -8,8 +8,9 @@
 export const brand = {
   // Organization branding
   name: process.env.NEXT_PUBLIC_BRAND_NAME || 'Funnelists',
-  logo: process.env.NEXT_PUBLIC_BRAND_LOGO || '/funnelists-logo.svg',
-  logoDark: process.env.NEXT_PUBLIC_BRAND_LOGO_DARK || '/funnelists-logo.svg',
+  logo: process.env.NEXT_PUBLIC_BRAND_LOGO || '/Funnelists-logo.png',
+  logoFallback: process.env.NEXT_PUBLIC_BRAND_LOGO_FALLBACK || '/Funnelists-logo.png',
+  logoDark: process.env.NEXT_PUBLIC_BRAND_LOGO_DARK || '/Funnelists-logo.png',
 
   // Brand colors (can be overridden for white-label)
   colors: {

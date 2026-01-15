@@ -10,26 +10,24 @@
 }
 
 .header {
-  text-align: center;
-  margin-bottom: 4rem;
+  margin-bottom: 3rem;
 }
 
 .title {
-  font-size: 3rem;
-  font-weight: 800;
-  margin-bottom: 1rem;
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
   background: linear-gradient(135deg, #0ea5e9 0%, #22c55e 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  letter-spacing: -0.05em;
+  letter-spacing: -0.02em;
 }
 
 .subtitle {
   color: var(--muted);
-  font-size: 1.25rem;
-  max-width: 600px;
-  margin: 0 auto;
+  font-size: 1rem;
+  margin-top: 0.5rem;
 }
 
 /* 3-Column Layout */
@@ -551,14 +549,17 @@
 .headerTop {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  position: relative;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.logoLockup {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .settingsButton {
-  position: absolute;
-  right: 0;
   background: transparent;
   border: 1px solid var(--border);
   border-radius: 8px;
