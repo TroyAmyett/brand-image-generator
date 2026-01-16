@@ -1,0 +1,68 @@
+/* Textarea Component Styles */
+
+.fl-textarea-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fl-spacing-xs);
+  width: 100%;
+}
+
+.fl-textarea__label {
+  font-size: var(--fl-font-size-sm);
+  font-weight: var(--fl-font-weight-medium);
+  color: var(--fl-color-text-primary);
+}
+
+.fl-textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: var(--fl-spacing-sm) var(--fl-spacing-md);
+  font-family: var(--fl-font-family);
+  font-size: var(--fl-font-size-sm);
+  line-height: var(--fl-line-height-normal);
+  color: var(--fl-color-text-primary);
+  background-color: var(--fl-color-bg-elevated);
+  border: 1px solid var(--fl-color-border);
+  border-radius: var(--fl-radius-md);
+  transition: all var(--fl-transition-fast);
+  outline: none;
+}
+
+.fl-textarea::placeholder {
+  color: var(--fl-color-text-muted);
+}
+
+.fl-textarea:hover:not(:disabled) {
+  border-color: var(--fl-color-border-hover);
+}
+
+.fl-textarea:focus {
+  border-color: var(--fl-color-border-focus);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
+}
+
+.fl-textarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: var(--fl-color-bg-surface);
+}
+
+/* Error State */
+.fl-textarea-wrapper--error .fl-textarea {
+  border-color: var(--fl-color-error);
+}
+
+.fl-textarea-wrapper--error .fl-textarea:focus {
+  border-color: var(--fl-color-error);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+.fl-textarea__error {
+  font-size: var(--fl-font-size-sm);
+  color: var(--fl-color-error);
+}
+
+.fl-textarea__hint {
+  font-size: var(--fl-font-size-sm);
+  color: var(--fl-color-text-muted);
+}

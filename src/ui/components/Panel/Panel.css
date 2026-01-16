@@ -1,0 +1,41 @@
+/* Panel Component Styles */
+
+.fl-panel {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--fl-color-bg-elevated);
+  border: 1px solid var(--fl-color-border);
+  border-radius: var(--fl-radius-lg);
+  overflow: hidden;
+}
+
+.fl-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fl-spacing-md);
+  padding: var(--fl-spacing-md) var(--fl-spacing-lg);
+  border-bottom: 1px solid var(--fl-color-border);
+  background-color: var(--fl-color-bg-surface);
+}
+
+.fl-panel__title {
+  font-size: var(--fl-font-size-md);
+  font-weight: var(--fl-font-weight-semibold);
+  color: var(--fl-color-text-primary);
+}
+
+.fl-panel__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--fl-spacing-sm);
+}
+
+.fl-panel__content {
+  flex: 1;
+  padding: var(--fl-spacing-lg);
+}
+
+.fl-panel__content--no-padding {
+  padding: 0;
+}

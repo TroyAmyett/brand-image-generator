@@ -1,0 +1,66 @@
+/* AppHeader Component Styles */
+
+.fl-app-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--fl-z-fixed);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  padding: 0 var(--fl-spacing-lg);
+  background-color: var(--fl-color-bg-elevated);
+  border-bottom: 1px solid var(--fl-color-border);
+}
+
+.fl-app-header__left {
+  display: flex;
+  align-items: center;
+  gap: var(--fl-spacing-md);
+}
+
+.fl-app-header__logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fl-app-header__logo img,
+.fl-app-header__logo svg {
+  height: 28px;
+  width: auto;
+}
+
+.fl-app-header__tool-name {
+  font-size: var(--fl-font-size-md);
+  font-weight: var(--fl-font-weight-semibold);
+  color: var(--fl-color-text-primary);
+}
+
+.fl-app-header__tool-switcher {
+  display: flex;
+  align-items: center;
+}
+
+.fl-app-header__right {
+  display: flex;
+  align-items: center;
+  gap: var(--fl-spacing-sm);
+}
+
+.fl-app-header__settings {
+  display: flex;
+  align-items: center;
+}
+
+.fl-app-header__user-menu {
+  display: flex;
+  align-items: center;
+}
+
+/* Utility class for content below the fixed header */
+.fl-app-header-spacer {
+  height: 56px;
+}

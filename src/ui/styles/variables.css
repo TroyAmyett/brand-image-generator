@@ -1,0 +1,104 @@
+/* Funnelists UI - CSS Variables */
+
+:root {
+  /* Brand Colors */
+  --fl-color-primary: #0ea5e9;
+  --fl-color-primary-hover: #0284c7;
+  --fl-color-primary-active: #0369a1;
+
+  /* Background Colors */
+  --fl-color-bg-base: #0a0a0f;
+  --fl-color-bg-elevated: #111118;
+  --fl-color-bg-surface: #1a1a24;
+  --fl-color-bg-overlay: #1a1a24;
+
+  /* Border Colors */
+  --fl-color-border: #2a2a3a;
+  --fl-color-border-hover: #3a3a4a;
+  --fl-color-border-focus: #0ea5e9;
+
+  /* Text Colors */
+  --fl-color-text-primary: #ffffff;
+  --fl-color-text-secondary: #a1a1aa;
+  --fl-color-text-muted: #71717a;
+  --fl-color-text-inverse: #0a0a0f;
+
+  /* Status Colors */
+  --fl-color-success: #22c55e;
+  --fl-color-warning: #f59e0b;
+  --fl-color-error: #ef4444;
+  --fl-color-info: #0ea5e9;
+
+  /* Typography - Font Family */
+  --fl-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Typography - Font Sizes */
+  --fl-font-size-2xl: 2rem;      /* 32px */
+  --fl-font-size-xl: 1.5rem;     /* 24px */
+  --fl-font-size-lg: 1.25rem;    /* 20px */
+  --fl-font-size-md: 1rem;       /* 16px */
+  --fl-font-size-sm: 0.875rem;   /* 14px */
+  --fl-font-size-xs: 0.75rem;    /* 12px */
+
+  /* Typography - Font Weights */
+  --fl-font-weight-normal: 400;
+  --fl-font-weight-medium: 500;
+  --fl-font-weight-semibold: 600;
+  --fl-font-weight-bold: 700;
+
+  /* Typography - Line Heights */
+  --fl-line-height-tight: 1.25;
+  --fl-line-height-normal: 1.5;
+  --fl-line-height-relaxed: 1.75;
+
+  /* Spacing Scale */
+  --fl-spacing-xs: 4px;
+  --fl-spacing-sm: 8px;
+  --fl-spacing-md: 16px;
+  --fl-spacing-lg: 24px;
+  --fl-spacing-xl: 32px;
+  --fl-spacing-2xl: 48px;
+  --fl-spacing-3xl: 64px;
+
+  /* Border Radius */
+  --fl-radius-sm: 4px;
+  --fl-radius-md: 6px;
+  --fl-radius-lg: 8px;
+  --fl-radius-xl: 12px;
+  --fl-radius-full: 9999px;
+
+  /* Shadows */
+  --fl-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --fl-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --fl-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+  --fl-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.6);
+
+  /* Transitions */
+  --fl-transition-fast: 150ms ease;
+  --fl-transition-normal: 200ms ease;
+  --fl-transition-slow: 300ms ease;
+
+  /* Z-Index Scale */
+  --fl-z-dropdown: 100;
+  --fl-z-sticky: 200;
+  --fl-z-fixed: 300;
+  --fl-z-modal-backdrop: 400;
+  --fl-z-modal: 500;
+  --fl-z-popover: 600;
+  --fl-z-tooltip: 700;
+}
+
+/* Base Styles */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--fl-font-family);
+  font-size: var(--fl-font-size-md);
+  line-height: var(--fl-line-height-normal);
+  color: var(--fl-color-text-primary);
+  background-color: var(--fl-color-bg-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

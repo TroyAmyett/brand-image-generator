@@ -962,3 +962,36 @@
   font-size: 0.85rem;
   margin-bottom: 1rem;
 }
+
+/* Sticky Generate Button */
+.stickyButton {
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(to top, var(--card-bg) 80%, transparent);
+  padding: 1rem 0 0.5rem;
+  margin: 1rem -0.5rem -0.5rem;
+  z-index: 10;
+}
+
+@media (max-height: 768px) {
+  .stickyButton {
+    position: sticky;
+  }
+}
+
+/* Image Output Container - fills available space with min height */
+.imageOutputContainer {
+  min-height: 400px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.imageOutputContainer :global(.fl-image-output) {
+  flex: 1;
+  min-height: 400px;
+}
+
+.imageOutputContainer :global(.fl-image-output--fill) {
+  min-height: 400px;
+}

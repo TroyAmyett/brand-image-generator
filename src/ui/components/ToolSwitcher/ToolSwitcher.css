@@ -1,0 +1,142 @@
+/* ToolSwitcher Component Styles */
+
+.fl-tool-switcher {
+  position: relative;
+}
+
+.fl-tool-switcher__trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--fl-spacing-xs);
+  padding: var(--fl-spacing-xs) var(--fl-spacing-sm);
+  font-family: var(--fl-font-family);
+  font-size: var(--fl-font-size-sm);
+  color: var(--fl-color-text-secondary);
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--fl-radius-md);
+  cursor: pointer;
+  transition: all var(--fl-transition-fast);
+}
+
+.fl-tool-switcher__trigger:hover {
+  color: var(--fl-color-text-primary);
+  background-color: var(--fl-color-bg-surface);
+}
+
+.fl-tool-switcher__trigger:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--fl-color-bg-base), 0 0 0 4px var(--fl-color-primary);
+}
+
+.fl-tool-switcher__trigger-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fl-tool-switcher__trigger-icon svg {
+  width: 1.25em;
+  height: 1.25em;
+}
+
+.fl-tool-switcher__trigger-chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fl-tool-switcher__trigger-chevron svg {
+  width: 1em;
+  height: 1em;
+}
+
+.fl-tool-switcher__dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: var(--fl-z-dropdown);
+  min-width: 240px;
+  margin-top: var(--fl-spacing-xs);
+  padding: var(--fl-spacing-xs);
+  background-color: var(--fl-color-bg-surface);
+  border: 1px solid var(--fl-color-border);
+  border-radius: var(--fl-radius-lg);
+  box-shadow: var(--fl-shadow-lg);
+}
+
+.fl-tool-switcher__option {
+  display: flex;
+  align-items: center;
+  gap: var(--fl-spacing-sm);
+  width: 100%;
+  padding: var(--fl-spacing-sm) var(--fl-spacing-md);
+  font-family: var(--fl-font-family);
+  text-align: left;
+  color: var(--fl-color-text-primary);
+  background-color: transparent;
+  border: none;
+  border-radius: var(--fl-radius-md);
+  cursor: pointer;
+  transition: background-color var(--fl-transition-fast);
+}
+
+.fl-tool-switcher__option:hover {
+  background-color: var(--fl-color-bg-elevated);
+}
+
+.fl-tool-switcher__option--active {
+  background-color: rgba(14, 165, 233, 0.1);
+}
+
+.fl-tool-switcher__option--active:hover {
+  background-color: rgba(14, 165, 233, 0.15);
+}
+
+.fl-tool-switcher__option-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  color: var(--fl-color-text-secondary);
+  background-color: var(--fl-color-bg-elevated);
+  border-radius: var(--fl-radius-md);
+}
+
+.fl-tool-switcher__option-icon svg {
+  width: 1.25em;
+  height: 1.25em;
+}
+
+.fl-tool-switcher__option-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fl-tool-switcher__option-name {
+  font-size: var(--fl-font-size-sm);
+  font-weight: var(--fl-font-weight-medium);
+  color: var(--fl-color-text-primary);
+}
+
+.fl-tool-switcher__option-description {
+  font-size: var(--fl-font-size-xs);
+  color: var(--fl-color-text-muted);
+}
+
+.fl-tool-switcher__option-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--fl-color-primary);
+}
+
+.fl-tool-switcher__option-check svg {
+  width: 1.25em;
+  height: 1.25em;
+}

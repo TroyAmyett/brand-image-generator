@@ -1,0 +1,106 @@
+/* ImageOutput Component Styles */
+
+.fl-image-output {
+  display: flex;
+  flex-direction: column;
+  min-height: 400px;
+  background-color: var(--fl-color-bg-elevated);
+  border: 1px solid var(--fl-color-border);
+  border-radius: var(--fl-radius-lg);
+  overflow: hidden;
+}
+
+.fl-image-output__container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  padding: var(--fl-spacing-md);
+}
+
+/* Default Variant - Centered with padding */
+.fl-image-output--default .fl-image-output__image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: var(--fl-radius-md);
+}
+
+/* Fill Variant - Image fills container */
+.fl-image-output--fill .fl-image-output__container {
+  padding: 0;
+}
+
+.fl-image-output--fill .fl-image-output__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Placeholder State */
+.fl-image-output__placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fl-spacing-md);
+  color: var(--fl-color-text-muted);
+}
+
+.fl-image-output__placeholder-icon {
+  width: 64px;
+  height: 64px;
+  opacity: 0.5;
+}
+
+.fl-image-output__placeholder-text {
+  font-size: var(--fl-font-size-sm);
+}
+
+/* Loading State */
+.fl-image-output__loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fl-spacing-md);
+  color: var(--fl-color-text-secondary);
+}
+
+.fl-image-output__spinner {
+  width: 48px;
+  height: 48px;
+  color: var(--fl-color-primary);
+}
+
+.fl-image-output__spinner svg {
+  width: 100%;
+  height: 100%;
+  animation: fl-image-output-spin 1s linear infinite;
+}
+
+.fl-image-output__loader-text {
+  font-size: var(--fl-font-size-sm);
+  color: var(--fl-color-text-muted);
+}
+
+@keyframes fl-image-output-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Actions Bar */
+.fl-image-output__actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fl-spacing-sm);
+  padding: var(--fl-spacing-md);
+  border-top: 1px solid var(--fl-color-border);
+  background-color: var(--fl-color-bg-surface);
+}
