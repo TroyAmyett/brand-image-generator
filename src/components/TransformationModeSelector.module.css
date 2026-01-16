@@ -1,0 +1,75 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.modeButton {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  width: 100%;
+  font-family: inherit;
+}
+
+.modeButton:hover:not(.disabled) {
+  background: rgba(14, 165, 233, 0.05);
+  border-color: rgba(14, 165, 233, 0.3);
+}
+
+.modeButton.active {
+  background: rgba(14, 165, 233, 0.1);
+  border-color: var(--primary);
+}
+
+.modeButton.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.iconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: rgba(14, 165, 233, 0.1);
+  border-radius: 8px;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.modeButton.active .iconWrapper {
+  background: var(--primary);
+  color: #fff;
+}
+
+.textContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.label {
+  color: #f5f5f5;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.modeButton.active .label {
+  color: var(--primary);
+}
+
+.description {
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.3;
+}
