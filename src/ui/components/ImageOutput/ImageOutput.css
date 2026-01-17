@@ -3,7 +3,8 @@
 .fl-image-output {
   display: flex;
   flex-direction: column;
-  min-height: 400px;
+  flex: 1;
+  min-height: 0;
   background-color: var(--fl-color-bg-elevated);
   border: 1px solid var(--fl-color-border);
   border-radius: var(--fl-radius-lg);
@@ -15,7 +16,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 400px;
+  min-height: 0;
   padding: var(--fl-spacing-md);
 }
 

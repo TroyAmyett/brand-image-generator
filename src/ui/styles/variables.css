@@ -7,14 +7,14 @@
   --fl-color-primary-active: #0369a1;
 
   /* Background Colors */
-  --fl-color-bg-base: #0a0a0f;
-  --fl-color-bg-elevated: #111118;
-  --fl-color-bg-surface: #1a1a24;
-  --fl-color-bg-overlay: #1a1a24;
+  --fl-color-bg-base: #0a0a0a;
+  --fl-color-bg-elevated: #111111;
+  --fl-color-bg-surface: #1a1a1a;
+  --fl-color-bg-overlay: #1a1a1a;
 
   /* Border Colors */
-  --fl-color-border: #2a2a3a;
-  --fl-color-border-hover: #3a3a4a;
+  --fl-color-border: #2a2a2a;
+  --fl-color-border-hover: #3a3a3a;
   --fl-color-border-focus: #0ea5e9;
 
   /* Text Colors */

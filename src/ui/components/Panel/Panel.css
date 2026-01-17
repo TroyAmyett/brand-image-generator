@@ -3,6 +3,8 @@
 .fl-panel {
   display: flex;
   flex-direction: column;
+  height: 100%;
+  min-height: 0;
   background-color: var(--fl-color-bg-elevated);
   border: 1px solid var(--fl-color-border);
   border-radius: var(--fl-radius-lg);
@@ -33,7 +35,11 @@
 
 .fl-panel__content {
   flex: 1;
+  min-height: 0;
   padding: var(--fl-spacing-lg);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
 }
 
 .fl-panel__content--no-padding {
