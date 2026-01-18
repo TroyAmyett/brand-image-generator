@@ -1,10 +1,28 @@
 /* Canvas UI - Funnelists Design System */
 
-/* Full viewport height layout */
-.main {
+/* App Layout with Fixed Header */
+.appLayout {
   min-height: 100vh;
   height: 100vh;
-  padding: calc(56px + 1rem) 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  background: #0a0a0f;
+  overflow: hidden;
+}
+
+/* Main Layout with Sidebar */
+.mainLayout {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Full viewport height layout */
+.main {
+  flex: 1;
+  min-height: 0;
+  padding: 1rem;
   background: #0a0a0f;
   display: flex;
   flex-direction: column;
@@ -869,6 +887,110 @@
 .subtitle {
   color: rgba(255, 255, 255, 0.5);
   font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+/* Tab Content Styles */
+.tabContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.tabHeader {
+  margin-bottom: 1.5rem;
+}
+
+.tabHeader h1 {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: #fff;
+  margin: 0 0 0.25rem 0;
+}
+
+.tabHeader p {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
+}
+
+/* Empty State */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  color: rgba(255, 255, 255, 0.3);
+  text-align: center;
+}
+
+.emptyState svg {
+  opacity: 0.3;
+  margin-bottom: 1rem;
+}
+
+.emptyState p {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.emptyStateHint {
+  font-size: 0.85rem !important;
+  margin-top: 0.5rem !important;
+  opacity: 0.7;
+}
+
+/* Full History Grid (for History tab) */
+.historyFullGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.historyFullItem {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.historyFullItem:hover {
+  border-color: #0ea5e9;
+  transform: translateY(-2px);
+}
+
+.historyFullItem img {
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+}
+
+.historyFullInfo {
+  padding: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.historyFullTitle {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.historyFullMeta {
+  display: block;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
   margin-top: 0.25rem;
 }
 

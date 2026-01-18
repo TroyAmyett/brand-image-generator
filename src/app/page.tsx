@@ -5,6 +5,7 @@ import styles from './page.module.css';
 import { APP_VERSION } from '@/lib/version';
 import { brand, applyBrandColors } from '@/lib/brand';
 import { BrandLogo } from '@/components/BrandLogo';
+import { CanvasSidebar, type CanvasTab } from '@/components/CanvasSidebar';
 import {
   Settings,
   X,
@@ -12,13 +13,18 @@ import {
   Edit,
   Copy,
   Check,
-  Clock,
   Key,
   Type,
   ImagePlus,
+  Image as ImageIcon,
+  Sparkles,
+  FileText,
+  Grid,
 } from 'lucide-react';
 import ApiKeySettings from '@/components/ApiKeySettings';
-import { getApiKey, hasApiKey } from '@/lib/apiKeyStorage';
+import { UserMenu } from '@/components/UserMenu';
+import { ToolSwitcher } from '@/components/ToolSwitcher';
+import { getApiKey, hasApiKey } from '@/lib/apiKeyManager';
 import ImageUpload, { ImageUploadResult } from '@/components/ImageUpload';
 import TransformationModeSelector, { TransformationMode } from '@/components/TransformationModeSelector';
 import StyleStrengthSlider from '@/components/StyleStrengthSlider';
@@ -28,11 +34,9 @@ import ComparisonView from '@/components/ComparisonView';
 // Funnelists UI Components
 import { AppHeader } from '@/ui/components/AppHeader/AppHeader';
 import { Button } from '@/ui/components/Button/Button';
-import { Panel } from '@/ui/components/Panel/Panel';
 import { Input } from '@/ui/components/Input/Input';
 import { Select, type SelectOption } from '@/ui/components/Select/Select';
 import { Textarea } from '@/ui/components/Textarea/Textarea';
-import { ImageOutput } from '@/ui/components/ImageOutput/ImageOutput';
 import '@/ui/styles/index.css';
 
 const USAGE_OPTIONS: SelectOption[] = [
@@ -74,13 +78,20 @@ const ASSET_TYPE_OPTIONS: SelectOption[] = [
   { value: 'icon_set', label: 'Icon Set' },
 ];
 
-const BRAND_THEME_OPTIONS: SelectOption[] = [
-  { value: 'salesforce', label: 'Salesforce' },
-  { value: 'general_ai', label: 'General AI' },
-  { value: 'blockchain', label: 'Blockchain' },
-  { value: 'neutral', label: 'Neutral' },
-  { value: 'minimal', label: 'Minimal' },
+// New Style dropdown options
+const STYLE_OPTIONS: SelectOption[] = [
   { value: 'photorealistic', label: 'Photorealistic' },
+  { value: 'illustration', label: 'Illustration' },
+  { value: 'minimalist', label: 'Minimalist' },
+  { value: '3d_render', label: '3D Render' },
+  { value: 'cinematic', label: 'Cinematic' },
+];
+
+// Updated Brand Theme options (removed Funnelists and Photorealistic)
+const BRAND_THEME_OPTIONS: SelectOption[] = [
+  { value: 'none', label: 'None' },
+  { value: 'my_brand', label: 'My Brand' },
+  { value: 'salesforce', label: 'Salesforce' },
 ];
 
 const IMAGE_PROVIDER_OPTIONS: SelectOption[] = [
@@ -98,6 +109,8 @@ interface HistoryItem {
   subject: string;
   imageUrl: string;
   prompt: string;
+  style?: string;
+  brandTheme?: string;
 }
 
 interface AssetSetItem {
@@ -130,13 +143,18 @@ const slugify = (text: string): string => {
 };
 
 export default function Home() {
+  // Sidebar tab state
+  const [activeTab, setActiveTab] = useState<CanvasTab>('generate');
+
   // Main mode: text-to-image or image-to-image
   const [mainMode, setMainMode] = useState<'text2img' | 'img2img'>('text2img');
 
   // Text-to-Image state
   const [usage, setUsage] = useState(USAGE_OPTIONS[0].value);
   const [assetType, setAssetType] = useState(ASSET_TYPE_OPTIONS[0].value);
+  const [style, setStyle] = useState(STYLE_OPTIONS[0].value);
   const [brandTheme, setBrandTheme] = useState(BRAND_THEME_OPTIONS[0].value);
+  const [applyBrandColorsToImage, setApplyBrandColorsToImage] = useState(false);
   const [imageProvider, setImageProvider] = useState(IMAGE_PROVIDER_OPTIONS[0].value);
   const [dimension, setDimension] = useState(DIMENSION_OPTIONS[0].value);
   const [title, setTitle] = useState('');
@@ -237,18 +255,18 @@ export default function Home() {
   };
 
   // Check which providers have user API keys configured
-  const checkUserApiKeys = () => {
+  const checkUserApiKeys = async () => {
     const configured: Record<string, boolean> = {};
-    IMAGE_PROVIDER_OPTIONS.forEach(opt => {
-      configured[opt.value] = hasApiKey(opt.value as 'openai' | 'stability' | 'replicate' | 'anthropic');
-    });
+    for (const opt of IMAGE_PROVIDER_OPTIONS) {
+      configured[opt.value] = await hasApiKey(opt.value as 'openai' | 'stability' | 'replicate' | 'anthropic');
+    }
     setUserApiKeyConfigured(configured);
   };
 
   useEffect(() => {
     fetchHistory();
-    applyBrandColors(); // Apply white-label brand colors
-    checkUserApiKeys(); // Check for user API keys
+    applyBrandColors();
+    checkUserApiKeys();
   }, []);
 
   // Loading Cycle Logic for Text-to-Image
@@ -279,7 +297,6 @@ export default function Home() {
       const titleToUse = imageTitle || title;
       const seoFilename = slugify(titleToUse) + '.png';
 
-      // For data URLs, download directly
       if (urlToUse.startsWith('data:')) {
         const link = document.createElement('a');
         link.href = urlToUse;
@@ -320,11 +337,9 @@ export default function Home() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Toggle variant selection for Asset Set mode
   const toggleVariant = (variantKey: string) => {
     setSelectedVariants(prev => {
       if (prev.includes(variantKey)) {
-        // Don't allow deselecting master
         if (variantKey === 'master') return prev;
         return prev.filter(v => v !== variantKey);
       } else {
@@ -333,7 +348,6 @@ export default function Home() {
     });
   };
 
-  // Download for data URL images (Asset Set)
   const handleDownloadDataUrl = (dataUrl: string, variantKey: string) => {
     const seoFilename = `${slugify(title)}-${variantKey}.png`;
     const link = document.createElement('a');
@@ -346,20 +360,18 @@ export default function Home() {
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(`[Generate] Starting - ${generateMode} mode`);
     setLoading(true);
     setResult(null);
-    
-    try {
-      console.log('[Generate] Calling /api/generate...');
 
-      // Get user's API key for the selected provider if available
+    try {
       const userApiKey = await getApiKey(imageProvider as 'openai' | 'stability' | 'replicate' | 'anthropic');
 
       const requestBody: Record<string, unknown> = {
         usage,
         asset_type: assetType,
+        style,
         brand_theme: brandTheme,
+        apply_brand_colors: applyBrandColorsToImage,
         title,
         subject,
         additionalDetails: details,
@@ -367,7 +379,6 @@ export default function Home() {
         image_provider: imageProvider,
       };
 
-      // Include user's API key if they have one configured
       if (userApiKey) {
         requestBody.user_api_key = userApiKey;
       }
@@ -380,21 +391,16 @@ export default function Home() {
 
       const response = await fetch('/api/generate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
       });
 
       const data = await response.json();
-      console.log('[Generate] Response received:', { success: data.success, generate_mode: data.generate_mode, hasAssetSet: !!data.asset_set });
       if (data.success) {
-        // Support both legacy (imageUrl) and new (image_url) response formats
         const imageUrl = data.imageUrl || data.image_url;
         const prompt = data.prompt || data.prompt_used;
 
         if (data.generate_mode === 'asset_set' && data.asset_set) {
-          console.log('[Generate] Asset Set received with variants:', Object.keys(data.asset_set));
           setResult({
             imageUrl: data.asset_set.master?.url || imageUrl,
             prompt,
@@ -402,10 +408,9 @@ export default function Home() {
             asset_set: data.asset_set
           });
         } else {
-          console.log('[Generate] Single image received');
           setResult({ imageUrl, prompt, generate_mode: 'single' });
         }
-        fetchHistory(); // Refresh history
+        fetchHistory();
       } else {
         const errorMsg = data.error?.message || data.error || 'Something went wrong';
         console.error('Generation error:', data.error);
@@ -416,7 +421,6 @@ export default function Home() {
       const errorMsg = error instanceof Error ? error.message : 'Failed to generate image.';
       alert(errorMsg);
     } finally {
-      console.log('[Generate] Complete, setting loading=false');
       setLoading(false);
     }
   };
@@ -425,7 +429,7 @@ export default function Home() {
     if (!revisionText.trim() || !result?.prompt) return;
 
     setLoading(true);
-        setShowRevision(false);
+    setShowRevision(false);
 
     try {
       const revisedDetails = details
@@ -434,13 +438,13 @@ export default function Home() {
 
       const response = await fetch('/api/generate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           usage,
           asset_type: assetType,
+          style,
           brand_theme: brandTheme,
+          apply_brand_colors: applyBrandColorsToImage,
           dimension,
           title,
           subject,
@@ -452,7 +456,7 @@ export default function Home() {
       if (data.success) {
         setResult({ imageUrl: data.imageUrl, prompt: data.prompt });
         setRevisionText('');
-        fetchHistory(); // Refresh history
+        fetchHistory();
       } else {
         const errorMsg = data.error?.message || data.error || 'Something went wrong';
         console.error('Revision error:', data.error);
@@ -469,11 +473,12 @@ export default function Home() {
 
   const selectFromHistory = (item: HistoryItem) => {
     setResult({ imageUrl: item.imageUrl, prompt: item.prompt });
-    setTitle(item.title || item.subject); // Fallback to subject for older history items
+    setTitle(item.title || item.subject);
     setSubject(item.subject);
     setUsage(item.usage);
     setDimension(item.dimension);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (item.style) setStyle(item.style);
+    if (item.brandTheme) setBrandTheme(item.brandTheme);
   };
 
   // Image-to-Image handlers
@@ -490,10 +495,8 @@ export default function Home() {
     setImg2imgResult(null);
 
     try {
-      // Get user's API key for Stability AI
       const userApiKey = await getApiKey('stability');
 
-      // Send the resized image (already resized to Stability AI dimensions)
       const response = await fetch('/api/generate-img2img', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -511,7 +514,6 @@ export default function Home() {
 
       if (data.success) {
         setImg2imgResult({
-          // Show original (unresized) image in comparison for better UX
           originalImage: img2imgSourceImage.resizedDataUrl,
           styledImage: data.styledImage,
           prompt: data.prompt
@@ -547,473 +549,620 @@ export default function Home() {
     }
   };
 
+  // Render the text-to-image content
+  const renderText2ImgContent = () => (
+    <div className={styles.grid}>
+      {/* Left Sidebar: Configuration Form */}
+      <div className={styles.leftSidebar}>
+        <div className={styles.sidebarHeader}>
+          <div className={styles.sidebarTitle}>
+            <span className={styles.stepNumber}>1</span>
+            Configuration
+          </div>
+        </div>
+        <div className={styles.sidebarContent}>
+          <form onSubmit={handleGenerate}>
+            <Select
+              label="Usage Context"
+              value={usage}
+              onChange={(e) => setUsage(e.target.value)}
+              options={USAGE_OPTIONS}
+            />
+
+            <Select
+              label="Asset Type"
+              value={assetType}
+              onChange={(e) => setAssetType(e.target.value)}
+              options={ASSET_TYPE_OPTIONS}
+            />
+
+            <Select
+              label="Style"
+              value={style}
+              onChange={(e) => setStyle(e.target.value)}
+              options={STYLE_OPTIONS}
+            />
+
+            <Select
+              label="Brand Theme"
+              value={brandTheme}
+              onChange={(e) => setBrandTheme(e.target.value)}
+              options={BRAND_THEME_OPTIONS}
+            />
+
+            {brandTheme !== 'none' && (
+              <div className={styles.checkboxWrapper}>
+                <input
+                  type="checkbox"
+                  id="applyBrandColors"
+                  checked={applyBrandColorsToImage}
+                  onChange={(e) => setApplyBrandColorsToImage(e.target.checked)}
+                  className={styles.checkboxInput}
+                />
+                <label htmlFor="applyBrandColors" className={styles.checkboxLabel}>
+                  Apply brand colors to image
+                </label>
+              </div>
+            )}
+
+            <div className={styles.formGroup}>
+              <div className={styles.providerSelectWrapper}>
+                <Select
+                  label="Image Provider"
+                  value={imageProvider}
+                  onChange={(e) => setImageProvider(e.target.value)}
+                  options={IMAGE_PROVIDER_OPTIONS.map(opt => ({
+                    ...opt,
+                    label: opt.label + (userApiKeyConfigured[opt.value] ? ' (Your key)' : '')
+                  }))}
+                />
+                <Button
+                  variant="icon"
+                  type="button"
+                  onClick={() => setShowApiKeys(true)}
+                  title="Manage API Keys"
+                >
+                  <Key className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Generate Mode</label>
+              <div className={styles.toggleGroup}>
+                <Button
+                  type="button"
+                  variant={generateMode === 'single' ? 'primary' : 'secondary'}
+                  size="sm"
+                  onClick={() => setGenerateMode('single')}
+                >
+                  Single Image
+                </Button>
+                <Button
+                  type="button"
+                  variant={generateMode === 'asset_set' ? 'primary' : 'secondary'}
+                  size="sm"
+                  onClick={() => setGenerateMode('asset_set')}
+                >
+                  Asset Set
+                </Button>
+              </div>
+            </div>
+
+            {generateMode === 'single' ? (
+              <Select
+                label="Dimensions"
+                value={dimension}
+                onChange={(e) => setDimension(e.target.value)}
+                options={DIMENSION_OPTIONS}
+              />
+            ) : (
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Asset Set Variants</label>
+                <div className={styles.checkboxGroup}>
+                  {ASSET_SET_VARIANTS.map((variant) => (
+                    <label key={variant.key} className={styles.variantLabel}>
+                      <input
+                        type="checkbox"
+                        checked={selectedVariants.includes(variant.key)}
+                        onChange={() => toggleVariant(variant.key)}
+                        disabled={variant.key === 'master'}
+                        className={styles.checkbox}
+                      />
+                      <span className={styles.checkboxText}>
+                        {variant.label}
+                        <span className={styles.checkboxSize}>{variant.size}</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <Input
+              label="Title (SEO filename)"
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g., 'astronaut-bus-stop-cta'"
+              required
+            />
+
+            <Input
+              label="Subject (image description)"
+              type="text"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder="e.g., 'Modern optimization dashboard'"
+              required
+            />
+
+            <Textarea
+              label="Additional Details (Optional)"
+              value={details}
+              onChange={(e) => setDetails(e.target.value)}
+              placeholder="Lighting, specific elements..."
+              rows={2}
+            />
+
+            <div className={styles.stickyButton}>
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                disabled={loading}
+                isLoading={loading}
+              >
+                {loading ? 'Generating...' : 'Generate Asset'}
+              </Button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      {/* Center Column: Image Preview */}
+      <div className={styles.centerColumn}>
+        <div className={styles.previewHeader}>
+          <div className={styles.previewTitle}>
+            <span className={styles.stepNumber}>2</span>
+            Visual Output
+            {result?.generate_mode === 'asset_set' && (
+              <span className={styles.assetSetBadge}>Asset Set</span>
+            )}
+          </div>
+        </div>
+        <div className={styles.previewContent}>
+          {loading ? (
+            <div className={styles.loadingContainer}>
+              <div className={styles.spinner} />
+              <span className={styles.loadingText}>{loadingText}</span>
+            </div>
+          ) : result?.generate_mode === 'asset_set' && result.asset_set ? (
+            <div className={styles.assetSetGrid}>
+              {Object.entries(result.asset_set).map(([key, asset]) => {
+                const variantInfo = ASSET_SET_VARIANTS.find(v => v.key === key);
+                return (
+                  <div key={key} className={styles.assetSetItem}>
+                    <div className={styles.assetSetImageWrapper}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={asset.url}
+                        alt={`${subject} - ${variantInfo?.label || key}`}
+                        className={styles.assetSetImage}
+                      />
+                    </div>
+                    <div className={styles.assetSetInfo}>
+                      <span className={styles.assetSetLabel}>{variantInfo?.label || key}</span>
+                      <span className={styles.assetSetDimensions}>{asset.dimensions}</span>
+                    </div>
+                    <Button
+                      variant="icon"
+                      onClick={() => handleDownloadDataUrl(asset.url, key)}
+                      title={`Download ${variantInfo?.label || key}`}
+                    >
+                      <Download className="w-4 h-4" />
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          ) : result?.imageUrl ? (
+            <>
+              <div
+                className={styles.previewImageWrapper}
+                onClick={() => setShowPreview(true)}
+                title="Click to preview full size"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={result.imageUrl}
+                  alt={subject}
+                  className={styles.previewImage}
+                />
+              </div>
+              <div className={styles.previewActions}>
+                <Button
+                  variant="secondary"
+                  leftIcon={<Download className="w-4 h-4" />}
+                  onClick={() => handleDownload()}
+                >
+                  Download
+                </Button>
+                <Button
+                  variant="secondary"
+                  leftIcon={<Edit className="w-4 h-4" />}
+                  onClick={() => setShowRevision(!showRevision)}
+                  disabled={loading}
+                >
+                  Revise
+                </Button>
+              </div>
+              {showRevision && (
+                <div className={styles.revisionContainer}>
+                  <Textarea
+                    value={revisionText}
+                    onChange={(e) => setRevisionText(e.target.value)}
+                    placeholder="Describe what changes you want..."
+                    rows={2}
+                  />
+                  <Button
+                    variant="primary"
+                    onClick={handleRevision}
+                    disabled={loading || !revisionText.trim()}
+                    isLoading={loading}
+                  >
+                    {loading ? 'Generating...' : 'Generate Revision'}
+                  </Button>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className={styles.previewPlaceholder}>
+              <ImageIcon size={64} />
+              <p>Your generated image will appear here</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Right Sidebar: Prompt Data + Recent Generations */}
+      <div className={styles.rightSidebar}>
+        <div className={styles.sidebarHeader}>
+          <div className={styles.sidebarTitle}>
+            <span className={styles.stepNumber}>3</span>
+            Output Data
+          </div>
+        </div>
+        <div className={styles.sidebarContent}>
+          {/* Prompt Section */}
+          <div className={styles.promptSection}>
+            <div className={styles.promptHeader}>
+              <span className={styles.promptLabel}>
+                <FileText className="w-4 h-4" style={{ display: 'inline', marginRight: '0.25rem', verticalAlign: 'middle' }} />
+                Generated Prompt
+              </span>
+              {result?.prompt && (
+                <button
+                  className={styles.copyButton}
+                  onClick={handleCopyPrompt}
+                  title="Copy to Clipboard"
+                >
+                  {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                </button>
+              )}
+            </div>
+            <div className={styles.promptContainer}>
+              {result?.prompt ? (
+                <pre className={styles.promptText}>{result.prompt}</pre>
+              ) : (
+                <p className={styles.emptyPrompt}>Prompt will appear here...</p>
+              )}
+            </div>
+          </div>
+
+          {/* Recent Generations Grid */}
+          <div className={styles.generationsSection}>
+            <div className={styles.generationsHeader}>
+              <Grid className="w-4 h-4" style={{ color: '#0ea5e9' }} />
+              <span className={styles.generationsLabel}>Recent Generations</span>
+            </div>
+            <div className={styles.generationsGrid}>
+              {history.length > 0 ? (
+                history.slice(0, 8).map((item, idx) => (
+                  <div
+                    key={idx}
+                    className={styles.generationThumb}
+                    onClick={() => selectFromHistory(item)}
+                    title={item.title || item.subject}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={item.imageUrl} alt={item.title || item.subject} />
+                  </div>
+                ))
+              ) : (
+                <p className={styles.emptyGenerations}>No generations yet</p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Render the image-to-image content
+  const renderImg2ImgContent = () => (
+    <div className={styles.grid}>
+      {/* Left Sidebar: Source & Settings */}
+      <div className={styles.leftSidebar}>
+        <div className={styles.sidebarHeader}>
+          <div className={styles.sidebarTitle}>
+            <span className={styles.stepNumber}>1</span>
+            Source & Settings
+          </div>
+        </div>
+        <div className={styles.sidebarContent}>
+          <form onSubmit={handleImg2ImgGenerate}>
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Source Image</label>
+              <ImageUpload
+                onImageSelect={setImg2imgSourceImage}
+                selectedImage={img2imgSourceImage}
+                disabled={img2imgLoading}
+              />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Transformation Mode</label>
+              <TransformationModeSelector
+                value={img2imgTransformMode}
+                onChange={setImg2imgTransformMode}
+                disabled={img2imgLoading}
+              />
+            </div>
+
+            <div className={styles.formGroup}>
+              <StyleStrengthSlider
+                value={img2imgStyleStrength}
+                onChange={setImg2imgStyleStrength}
+                disabled={img2imgLoading}
+              />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Preserve Options</label>
+              <PreserveOptions
+                value={img2imgPreserveOptions}
+                onChange={setImg2imgPreserveOptions}
+                disabled={img2imgLoading}
+              />
+            </div>
+
+            <Select
+              label="Brand Theme"
+              value={img2imgBrandTheme}
+              onChange={(e) => setImg2imgBrandTheme(e.target.value)}
+              options={BRAND_THEME_OPTIONS}
+              disabled={img2imgLoading}
+            />
+
+            <div className={styles.formGroup}>
+              <label className={styles.label}>API Key</label>
+              <div className={styles.providerSelectWrapper}>
+                <div className={styles.apiKeyStatus}>
+                  Stability AI {userApiKeyConfigured['stability'] ? '(Your key)' : '(Server key)'}
+                </div>
+                <Button
+                  variant="icon"
+                  type="button"
+                  onClick={() => setShowApiKeys(true)}
+                  title="Manage API Keys"
+                >
+                  <Key className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            {img2imgError && (
+              <div className={styles.errorMessage}>{img2imgError}</div>
+            )}
+
+            <div className={styles.stickyButton}>
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                disabled={img2imgLoading || !img2imgSourceImage}
+                isLoading={img2imgLoading}
+              >
+                {img2imgLoading ? 'Styling Image...' : 'Apply Style'}
+              </Button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      {/* Center Column: Comparison View */}
+      <div className={styles.centerColumn}>
+        <div className={styles.previewHeader}>
+          <div className={styles.previewTitle}>
+            <span className={styles.stepNumber}>2</span>
+            Comparison
+            {img2imgResult && <span className={styles.img2imgBadge}>Styled</span>}
+          </div>
+        </div>
+        <div className={styles.previewContent}>
+          {img2imgLoading ? (
+            <div className={styles.loadingContainer}>
+              <div className={styles.spinner} />
+              <span className={styles.loadingText}>Applying style transformation...</span>
+            </div>
+          ) : img2imgResult ? (
+            <ComparisonView
+              originalImage={img2imgResult.originalImage}
+              styledImage={img2imgResult.styledImage}
+              onDownload={handleImg2ImgDownload}
+              onRegenerate={handleImg2ImgRegenerate}
+              loading={img2imgLoading}
+            />
+          ) : (
+            <div className={styles.previewPlaceholder}>
+              <Sparkles size={64} />
+              <p>Upload an image and click Apply Style to see the comparison</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Right Sidebar: Style Details */}
+      <div className={styles.rightSidebar}>
+        <div className={styles.sidebarHeader}>
+          <div className={styles.sidebarTitle}>
+            <span className={styles.stepNumber}>3</span>
+            Style Details
+          </div>
+        </div>
+        <div className={styles.sidebarContent}>
+          <div className={styles.promptSection}>
+            <div className={styles.promptHeader}>
+              <span className={styles.promptLabel}>
+                <FileText className="w-4 h-4" style={{ display: 'inline', marginRight: '0.25rem', verticalAlign: 'middle' }} />
+                Style Prompt
+              </span>
+            </div>
+            <div className={styles.promptContainer}>
+              {img2imgResult?.prompt ? (
+                <pre className={styles.promptText}>{img2imgResult.prompt}</pre>
+              ) : (
+                <p className={styles.emptyPrompt}>Style prompt will appear here after transformation</p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Handle tab change - switch to settings modal when settings tab is selected
+  const handleTabChange = (tab: CanvasTab) => {
+    if (tab === 'settings') {
+      openSettings();
+    } else {
+      setActiveTab(tab);
+    }
+  };
+
   return (
-    <main className={styles.main}>
-      <div className={styles.container}>
-        <AppHeader
-          logo={<BrandLogo height={48} />}
-          toolName={brand.product.name}
-          settingsButton={
+    <div className={styles.appLayout}>
+      {/* Fixed Header */}
+      <AppHeader
+        logo={<BrandLogo height={32} />}
+        toolSwitcher={<ToolSwitcher />}
+        settingsButton={
+          <>
+            <UserMenu />
             <Button variant="icon" onClick={openSettings} title="Settings">
               <Settings className="w-5 h-5" />
             </Button>
-          }
-        />
+          </>
+        }
+      />
 
-        {/* Main Mode Tabs */}
-        <div className={styles.mainModeTabs}>
-          <Button
-            variant={mainMode === 'text2img' ? 'primary' : 'ghost'}
-            leftIcon={<Type className="w-5 h-5" />}
-            onClick={() => setMainMode('text2img')}
-          >
-            Text to Image
-          </Button>
-          <Button
-            variant={mainMode === 'img2img' ? 'primary' : 'ghost'}
-            leftIcon={<ImagePlus className="w-5 h-5" />}
-            onClick={() => setMainMode('img2img')}
-          >
-            Image to Image
-          </Button>
-        </div>
+      {/* Main Content Area with Sidebar */}
+      <div className={styles.mainLayout}>
+        {/* Sidebar */}
+        <CanvasSidebar activeTab={activeTab} onTabChange={handleTabChange} />
 
-        {mainMode === 'text2img' ? (
-          /* Text-to-Image Mode */
-          <div className={styles.grid}>
-            {/* Card 1: Configuration */}
-            <Panel header={<><span className={styles.stepNumber}>1</span> Configuration</>}>
-              <form onSubmit={handleGenerate}>
-                <Select
-                  label="Usage Context"
-                  value={usage}
-                  onChange={(e) => setUsage(e.target.value)}
-                  options={USAGE_OPTIONS}
-                />
-
-                <Select
-                  label="Asset Type"
-                  value={assetType}
-                  onChange={(e) => setAssetType(e.target.value)}
-                  options={ASSET_TYPE_OPTIONS}
-                />
-
-                <Select
-                  label="Brand Theme"
-                  value={brandTheme}
-                  onChange={(e) => setBrandTheme(e.target.value)}
-                  options={BRAND_THEME_OPTIONS}
-                />
-
-                <div className={styles.formGroup}>
-                  <div className={styles.providerSelectWrapper}>
-                    <Select
-                      label="Image Provider"
-                      value={imageProvider}
-                      onChange={(e) => setImageProvider(e.target.value)}
-                      options={IMAGE_PROVIDER_OPTIONS.map(opt => ({
-                        ...opt,
-                        label: opt.label + (userApiKeyConfigured[opt.value] ? ' (Your key)' : '')
-                      }))}
-                    />
-                    <Button
-                      variant="icon"
-                      type="button"
-                      onClick={() => setShowApiKeys(true)}
-                      title="Manage API Keys"
-                    >
-                      <Key className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>Generate Mode</label>
-                  <div className={styles.toggleGroup}>
-                    <Button
-                      type="button"
-                      variant={generateMode === 'single' ? 'primary' : 'secondary'}
-                      size="sm"
-                      onClick={() => setGenerateMode('single')}
-                    >
-                      Single Image
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={generateMode === 'asset_set' ? 'primary' : 'secondary'}
-                      size="sm"
-                      onClick={() => setGenerateMode('asset_set')}
-                    >
-                      Asset Set
-                    </Button>
-                  </div>
-                </div>
-
-                {generateMode === 'single' ? (
-                  <Select
-                    label="Dimensions"
-                    value={dimension}
-                    onChange={(e) => setDimension(e.target.value)}
-                    options={DIMENSION_OPTIONS}
-                  />
-                ) : (
-                  <div className={styles.formGroup}>
-                    <label className={styles.label}>Asset Set Variants</label>
-                    <div className={styles.checkboxGroup}>
-                      {ASSET_SET_VARIANTS.map((variant) => (
-                        <label key={variant.key} className={styles.checkboxLabel}>
-                          <input
-                            type="checkbox"
-                            checked={selectedVariants.includes(variant.key)}
-                            onChange={() => toggleVariant(variant.key)}
-                            disabled={variant.key === 'master'}
-                            className={styles.checkbox}
-                          />
-                          <span className={styles.checkboxText}>
-                            {variant.label}
-                            <span className={styles.checkboxSize}>{variant.size}</span>
-                          </span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <Input
-                  label="Title (SEO filename)"
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g., 'astronaut-bus-stop-cta'"
-                  required
-                />
-
-                <Input
-                  label="Subject (image description)"
-                  type="text"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  placeholder="e.g., 'Modern optimization dashboard with AI analytics'"
-                  required
-                />
-
-                <Textarea
-                  label="Additional Details (Optional)"
-                  value={details}
-                  onChange={(e) => setDetails(e.target.value)}
-                  placeholder="Lighting, specific elements..."
-                  rows={3}
-                />
-
-                <div className={styles.stickyButton}>
+        {/* Content Area */}
+        <main className={styles.main}>
+          <div className={styles.container}>
+            {/* Generate Tab */}
+            {activeTab === 'generate' && (
+              <>
+                {/* Main Mode Tabs */}
+                <div className={styles.mainModeTabs}>
                   <Button
-                    type="submit"
-                    variant="primary"
-                    size="lg"
-                    disabled={loading}
-                    isLoading={loading}
+                    variant={mainMode === 'text2img' ? 'primary' : 'ghost'}
+                    leftIcon={<Type className="w-4 h-4" />}
+                    onClick={() => setMainMode('text2img')}
                   >
-                    {loading ? 'Generating...' : 'Generate Asset'}
+                    Text to Image
+                  </Button>
+                  <Button
+                    variant={mainMode === 'img2img' ? 'primary' : 'ghost'}
+                    leftIcon={<ImagePlus className="w-4 h-4" />}
+                    onClick={() => setMainMode('img2img')}
+                  >
+                    Image to Image
                   </Button>
                 </div>
-              </form>
-            </Panel>
 
-            {/* Card 2: Image Result */}
-            <Panel
-              header={
-                <>
-                  <span className={styles.stepNumber}>2</span> Visual Output
-                  {result?.generate_mode === 'asset_set' && (
-                    <span className={styles.assetSetBadge}>Asset Set</span>
-                  )}
-                </>
-              }
-            >
-              {/* Asset Set Display */}
-              {result?.generate_mode === 'asset_set' && result.asset_set ? (
-                <div className={styles.assetSetGrid}>
-                  {Object.entries(result.asset_set).map(([key, asset]) => {
-                    const variantInfo = ASSET_SET_VARIANTS.find(v => v.key === key);
-                    return (
-                      <div key={key} className={styles.assetSetItem}>
-                        <div className={styles.assetSetImageWrapper}>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={asset.url}
-                            alt={`${subject} - ${variantInfo?.label || key}`}
-                            className={styles.assetSetImage}
-                          />
-                        </div>
-                        <div className={styles.assetSetInfo}>
-                          <span className={styles.assetSetLabel}>{variantInfo?.label || key}</span>
-                          <span className={styles.assetSetDimensions}>{asset.dimensions}</span>
-                        </div>
-                        <Button
-                          variant="icon"
-                          onClick={() => handleDownloadDataUrl(asset.url, key)}
-                          title={`Download ${variantInfo?.label || key}`}
-                        >
-                          <Download className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    );
-                  })}
+                {mainMode === 'text2img' ? renderText2ImgContent() : renderImg2ImgContent()}
+              </>
+            )}
+
+            {/* History Tab */}
+            {activeTab === 'history' && (
+              <div className={styles.tabContent}>
+                <div className={styles.tabHeader}>
+                  <h1>Generation History</h1>
+                  <p>View and reuse your previous generations</p>
                 </div>
-              ) : (
-                /* Single Image Display */
-                <>
-                  <div
-                    className={styles.imageOutputContainer}
-                    onClick={() => result?.imageUrl && setShowPreview(true)}
-                    style={{ cursor: result?.imageUrl ? 'pointer' : 'default' }}
-                    title={result?.imageUrl ? 'Click to preview full size' : undefined}
-                  >
-                    <ImageOutput
-                      src={result?.imageUrl}
-                      alt={subject}
-                      variant="fill"
-                      isLoading={loading}
-                      placeholder={
-                        loading ? (
-                          <span className={styles.loadingText}>{loadingText}</span>
-                        ) : undefined
-                      }
-                      actions={
-                        result?.imageUrl && (
-                          <div className={styles.actionButtons}>
-                            <Button
-                              variant="secondary"
-                              leftIcon={<Download className="w-5 h-5" />}
-                              onClick={(e) => { e.stopPropagation(); handleDownload(); }}
-                            >
-                              Download
-                            </Button>
-                            <Button
-                              variant="secondary"
-                              leftIcon={<Edit className="w-5 h-5" />}
-                              onClick={(e) => { e.stopPropagation(); setShowRevision(!showRevision); }}
-                              disabled={loading}
-                            >
-                              Revise
-                            </Button>
-                          </div>
-                        )
-                      }
-                    />
-                  </div>
-
-                  {showRevision && result?.imageUrl && (
-                    <div className={styles.revisionContainer}>
-                      <Textarea
-                        value={revisionText}
-                        onChange={(e) => setRevisionText(e.target.value)}
-                        placeholder="Describe what changes you want... (e.g., 'Make it more blue', 'Add more data streams', 'Remove the cloud logo')"
-                        rows={3}
-                      />
-                      <Button
-                        variant="primary"
-                        onClick={handleRevision}
-                        disabled={loading || !revisionText.trim()}
-                        isLoading={loading}
+                <div className={styles.historyFullGrid}>
+                  {history.length > 0 ? (
+                    history.map((item, idx) => (
+                      <div
+                        key={idx}
+                        className={styles.historyFullItem}
+                        onClick={() => {
+                          selectFromHistory(item);
+                          setActiveTab('generate');
+                        }}
                       >
-                        {loading ? 'Generating...' : 'Generate Revision'}
-                      </Button>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={item.imageUrl} alt={item.title || item.subject} />
+                        <div className={styles.historyFullInfo}>
+                          <span className={styles.historyFullTitle}>{item.title || item.subject}</span>
+                          <span className={styles.historyFullMeta}>{item.dimension} | {item.style || 'Default'}</span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className={styles.emptyState}>
+                      <Grid size={48} />
+                      <p>No generation history yet</p>
+                      <p className={styles.emptyStateHint}>Generate images to see them here</p>
                     </div>
                   )}
-                </>
-              )}
-            </Panel>
-
-            {/* Card 3: Exact Prompt */}
-            <Panel
-              header={<><span className={styles.stepNumber}>3</span> Prompt Data</>}
-              actions={
-                result?.prompt && (
-                  <Button variant="icon" onClick={handleCopyPrompt} title="Copy to Clipboard">
-                    {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                  </Button>
-                )
-              }
-            >
-              <div className={styles.promptContainer}>
-                {result?.prompt ? (
-                  <pre className={styles.promptText}>{result.prompt}</pre>
-                ) : (
-                  <div className={styles.emptyPrompt}>
-                    <p>Detailed prompt will appear here.</p>
-                  </div>
-                )}
+                </div>
               </div>
-            </Panel>
-          </div>
-        ) : (
-          /* Image-to-Image Mode */
-          <div className={styles.grid}>
-            {/* Card 1: Source Image & Settings */}
-            <Panel header={<><span className={styles.stepNumber}>1</span> Source & Settings</>}>
-              <form onSubmit={handleImg2ImgGenerate}>
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>Source Image</label>
-                  <ImageUpload
-                    onImageSelect={setImg2imgSourceImage}
-                    selectedImage={img2imgSourceImage}
-                    disabled={img2imgLoading}
-                  />
+            )}
+
+            {/* Templates Tab */}
+            {activeTab === 'templates' && (
+              <div className={styles.tabContent}>
+                <div className={styles.tabHeader}>
+                  <h1>Templates</h1>
+                  <p>Quick start with pre-configured templates</p>
                 </div>
-
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>Transformation Mode</label>
-                  <TransformationModeSelector
-                    value={img2imgTransformMode}
-                    onChange={setImg2imgTransformMode}
-                    disabled={img2imgLoading}
-                  />
+                <div className={styles.emptyState}>
+                  <Sparkles size={48} />
+                  <p>Templates coming soon</p>
+                  <p className={styles.emptyStateHint}>Pre-configured templates for common use cases</p>
                 </div>
-
-                <div className={styles.formGroup}>
-                  <StyleStrengthSlider
-                    value={img2imgStyleStrength}
-                    onChange={setImg2imgStyleStrength}
-                    disabled={img2imgLoading}
-                  />
-                </div>
-
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>Preserve Options</label>
-                  <PreserveOptions
-                    value={img2imgPreserveOptions}
-                    onChange={setImg2imgPreserveOptions}
-                    disabled={img2imgLoading}
-                  />
-                </div>
-
-                <Select
-                  label="Brand Theme"
-                  value={img2imgBrandTheme}
-                  onChange={(e) => setImg2imgBrandTheme(e.target.value)}
-                  options={BRAND_THEME_OPTIONS}
-                  disabled={img2imgLoading}
-                />
-
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>API Key</label>
-                  <div className={styles.providerSelectWrapper}>
-                    <div className={styles.apiKeyStatus}>
-                      Stability AI {userApiKeyConfigured['stability'] ? '(Your key configured)' : '(Server key)'}
-                    </div>
-                    <Button
-                      variant="icon"
-                      type="button"
-                      onClick={() => setShowApiKeys(true)}
-                      title="Manage API Keys"
-                    >
-                      <Key className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                {img2imgError && (
-                  <div className={styles.errorMessage}>
-                    {img2imgError}
-                  </div>
-                )}
-
-                <div className={styles.stickyButton}>
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    size="lg"
-                    disabled={img2imgLoading || !img2imgSourceImage}
-                    isLoading={img2imgLoading}
-                  >
-                    {img2imgLoading ? 'Styling Image...' : 'Apply Style'}
-                  </Button>
-                </div>
-              </form>
-            </Panel>
-
-            {/* Card 2: Comparison View */}
-            <Panel
-              header={
-                <>
-                  <span className={styles.stepNumber}>2</span> Comparison
-                  {img2imgResult && <span className={styles.img2imgBadge}>Styled</span>}
-                </>
-              }
-            >
-              {img2imgResult ? (
-                <ComparisonView
-                  originalImage={img2imgResult.originalImage}
-                  styledImage={img2imgResult.styledImage}
-                  onDownload={handleImg2ImgDownload}
-                  onRegenerate={handleImg2ImgRegenerate}
-                  loading={img2imgLoading}
-                />
-              ) : (
-                <ImageOutput
-                  variant="fill"
-                  isLoading={img2imgLoading}
-                  placeholder={
-                    img2imgLoading ? (
-                      <span className={styles.loadingText}>Applying style transformation...</span>
-                    ) : (
-                      <span>Upload an image and click Apply Style to see the comparison.</span>
-                    )
-                  }
-                />
-              )}
-            </Panel>
-
-            {/* Card 3: Style Info */}
-            <Panel header={<><span className={styles.stepNumber}>3</span> Style Details</>}>
-              <div className={styles.promptContainer}>
-                {img2imgResult?.prompt ? (
-                  <pre className={styles.promptText}>{img2imgResult.prompt}</pre>
-                ) : (
-                  <div className={styles.emptyPrompt}>
-                    <p>Style prompt will appear here after transformation.</p>
-                  </div>
-                )}
               </div>
-            </Panel>
+            )}
+
+            <footer className={styles.footer}>
+              <p>API Endpoint: <code className={styles.code}>POST /api/generate</code></p>
+              <p className={styles.versionTag}>{APP_VERSION}</p>
+              <p className={styles.footerBrand}>
+                <a href={brand.links.website} target="_blank" rel="noopener noreferrer">
+                  {brand.footer}
+                </a>
+              </p>
+            </footer>
           </div>
-        )}
-
-        {/* History Section (only for Text-to-Image) */}
-        {mainMode === 'text2img' && history.length > 0 && (
-          <section className={styles.historySection}>
-            <h2 className={styles.historyTitle}>
-              <Clock className="w-6 h-6" style={{ color: 'var(--primary)' }} />
-              Recent Generations
-            </h2>
-            <div className={styles.historyGrid}>
-              {history.map((item, idx) => (
-                <div key={idx} className={styles.historyItem} onClick={() => selectFromHistory(item)}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={item.imageUrl} alt={item.title || item.subject} className={styles.historyThumb} />
-                  <div className={styles.historyInfo}>
-                    <p className={styles.historySubject}>{item.title || item.subject}</p>
-                    <div className={styles.historyMeta}>
-                      <span>{item.usage}</span>
-                      <span>{new Date(item.timestamp).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        <footer className={styles.footer}>
-          <p>API Endpoint for Automations (Make.com): <code className={styles.code}>POST /api/generate</code></p>
-          <p className={styles.versionTag}>{APP_VERSION}</p>
-          <p className={styles.footerBrand}>
-            <a href={brand.links.website} target="_blank" rel="noopener noreferrer">
-              {brand.footer}
-            </a>
-          </p>
-        </footer>
+        </main>
       </div>
 
       {/* Image Preview Modal */}
@@ -1039,7 +1188,7 @@ export default function Home() {
         isOpen={showApiKeys}
         onClose={() => {
           setShowApiKeys(false);
-          checkUserApiKeys(); // Refresh key status when modal closes
+          checkUserApiKeys();
         }}
       />
 
@@ -1058,7 +1207,7 @@ export default function Home() {
               <div className={styles.settingsSection}>
                 <h3>Style Guide</h3>
                 <p className={styles.settingsDescription}>
-                  Customize the visual style guide used for generating images. This defines colors, themes, and visual elements.
+                  Customize the visual style guide used for generating images.
                 </p>
                 {styleGuideLoading && !styleGuide ? (
                   <div className={styles.settingsLoading}>Loading...</div>
@@ -1068,7 +1217,7 @@ export default function Home() {
                     onChange={(e) => setStyleGuide(e.target.value)}
                     className={styles.styleGuideEditor}
                     placeholder="Enter your style guide here..."
-                    rows={20}
+                    rows={15}
                   />
                 )}
               </div>
@@ -1090,6 +1239,6 @@ export default function Home() {
           </div>
         </div>
       )}
-    </main>
+    </div>
   );
 }
