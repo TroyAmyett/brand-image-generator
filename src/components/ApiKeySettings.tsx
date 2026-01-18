@@ -3,12 +3,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ImageProvider, PROVIDER_CONFIGS } from '@/lib/providers/types';
 import {
-    getApiKeyStatuses,
+    getApiKeyStatuses as getLocalApiKeyStatuses,
     saveApiKey,
     deleteApiKey,
-    getApiKey,
+    getApiKey as getLocalApiKey,
     ApiKeyStatus
 } from '@/lib/apiKeyStorage';
+import { useAuth } from '@/contexts/AuthContext';
+import { getApiKeyStatuses as getFederatedApiKeyStatuses } from '@/lib/apiKeyManager';
+import { ExternalLink } from 'lucide-react';
+import AccountLinkingSettings from './AccountLinkingSettings';
+
+const AGENTPM_URL = process.env.NEXT_PUBLIC_AGENTPM_URL || 'https://agentpm.ai';
 
 interface ApiKeySettingsProps {
     isOpen: boolean;
@@ -16,16 +22,31 @@ interface ApiKeySettingsProps {
 }
 
 export default function ApiKeySettings({ isOpen, onClose }: ApiKeySettingsProps) {
+    const { isFederated, isLinked, user } = useAuth();
     const [keyStatuses, setKeyStatuses] = useState<ApiKeyStatus[]>([]);
     const [editingProvider, setEditingProvider] = useState<ImageProvider | null>(null);
     const [keyInput, setKeyInput] = useState('');
     const [isValidating, setIsValidating] = useState(false);
     const [validationError, setValidationError] = useState<string | null>(null);
     const [showKey, setShowKey] = useState(false);
+    const [isLoadingKeys, setIsLoadingKeys] = useState(false);
 
-    const loadKeyStatuses = useCallback(() => {
-        setKeyStatuses(getApiKeyStatuses());
-    }, []);
+    const loadKeyStatuses = useCallback(async () => {
+        setIsLoadingKeys(true);
+        try {
+            if (isFederated || isLinked) {
+                const statuses = await getFederatedApiKeyStatuses();
+                setKeyStatuses(statuses);
+            } else {
+                setKeyStatuses(getLocalApiKeyStatuses());
+            }
+        } catch (error) {
+            console.error('Failed to load key statuses:', error);
+            setKeyStatuses(getLocalApiKeyStatuses());
+        } finally {
+            setIsLoadingKeys(false);
+        }
+    }, [isFederated, isLinked]);
 
     useEffect(() => {
         if (isOpen) {
@@ -34,13 +55,16 @@ export default function ApiKeySettings({ isOpen, onClose }: ApiKeySettingsProps)
     }, [isOpen, loadKeyStatuses]);
 
     const handleEdit = async (provider: ImageProvider) => {
+        // Don't allow editing in federated or linked mode
+        if (isFederated || isLinked) return;
+
         setEditingProvider(provider);
         setKeyInput('');
         setValidationError(null);
         setShowKey(false);
 
         // Load existing key if available
-        const existingKey = await getApiKey(provider);
+        const existingKey = await getLocalApiKey(provider);
         if (existingKey) {
             setKeyInput(existingKey);
         }
@@ -122,11 +146,53 @@ export default function ApiKeySettings({ isOpen, onClose }: ApiKeySettingsProps)
 
                 {/* Content */}
                 <div className="px-6 py-4">
-                    <p className="text-sm text-gray-600 mb-4">
-                        Add your own API keys to use different image providers. Keys are encrypted and stored locally in your browser.
-                    </p>
+                    {(isFederated || isLinked) ? (
+                        /* Federated/Linked User View */
+                        <>
+                            <div className="mb-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                        {isLinked ? 'Account Linked' : 'AgentPM Connected'}
+                                    </span>
+                                </div>
+                                <p className="text-sm text-gray-700 mb-3">
+                                    Your API keys are managed through AgentPM. Keys configured in AgentPM are automatically available in Canvas.
+                                </p>
+                                <a
+                                    href={`${AGENTPM_URL}/settings/api-keys`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+                                >
+                                    <ExternalLink className="w-4 h-4" />
+                                    Manage Keys in AgentPM
+                                </a>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-4">
+                                {user?.email && <span>Signed in as <strong>{user.email}</strong>. </span>}
+                                API keys from your AgentPM account:
+                            </p>
+                        </>
+                    ) : (
+                        /* Standalone User View */
+                        <>
+                            <AccountLinkingSettings />
+                            <p className="text-sm text-gray-600 mt-4 mb-4">
+                                Or add your own API keys below. Keys are encrypted and stored locally in your browser.
+                            </p>
+                        </>
+                    )}
+
+                    {/* Loading State */}
+                    {isLoadingKeys && (
+                        <div className="text-center py-4">
+                            <div className="inline-block w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
+                            <p className="text-sm text-gray-500 mt-2">Loading API keys...</p>
+                        </div>
+                    )}
 
                     {/* Provider List */}
+                    {!isLoadingKeys && (
                     <div className="space-y-4">
                         {keyStatuses.map((status) => (
                             <div
@@ -138,7 +204,7 @@ export default function ApiKeySettings({ isOpen, onClose }: ApiKeySettingsProps)
                                         <h3 className="font-medium text-gray-900">
                                             {status.providerName}
                                         </h3>
-                                        {status.isConfigured && (
+                                        {status.isConfigured ? (
                                             <div className="flex items-center gap-2 mt-1">
                                                 <span className={`inline-flex items-center gap-1 text-xs ${status.isValid ? 'text-green-600' : 'text-yellow-600'}`}>
                                                     <span className={`w-2 h-2 rounded-full ${status.isValid ? 'bg-green-500' : 'bg-yellow-500'}`} />
@@ -148,8 +214,11 @@ export default function ApiKeySettings({ isOpen, onClose }: ApiKeySettingsProps)
                                                     {status.keyHint}
                                                 </span>
                                             </div>
+                                        ) : (
+                                            <span className="text-xs text-gray-400 mt-1 block">Not configured</span>
                                         )}
                                     </div>
+                                    {!isFederated && !isLinked && (
                                     <div className="flex gap-2">
                                         {status.isConfigured ? (
                                             <>
@@ -175,6 +244,7 @@ export default function ApiKeySettings({ isOpen, onClose }: ApiKeySettingsProps)
                                             </button>
                                         )}
                                     </div>
+                                    )}
                                 </div>
 
                                 {/* Edit Form */}
@@ -230,13 +300,30 @@ export default function ApiKeySettings({ isOpen, onClose }: ApiKeySettingsProps)
                             </div>
                         ))}
                     </div>
+                    )}
 
                     {/* Security Notice */}
                     <div className="mt-6 p-3 bg-gray-50 rounded-lg">
                         <p className="text-xs text-gray-600">
-                            <strong>Security:</strong> Your API keys are encrypted using AES-256-GCM and stored only in your browser&apos;s local storage. They are never sent to our servers except when making API calls to the respective providers.
+                            {(isFederated || isLinked) ? (
+                                <>
+                                    <strong>Security:</strong> Your API keys are securely stored and managed by AgentPM. Canvas retrieves keys on-demand using your authenticated session and never stores them locally.
+                                </>
+                            ) : (
+                                <>
+                                    <strong>Security:</strong> Your API keys are encrypted using AES-256-GCM and stored only in your browser&apos;s local storage. They are never sent to our servers except when making API calls to the respective providers.
+                                </>
+                            )}
                         </p>
                     </div>
+
+                    {/* Account Linking Section for Linked Users */}
+                    {isLinked && (
+                        <div className="mt-6">
+                            <h3 className="text-sm font-medium text-gray-700 mb-2">Account Settings</h3>
+                            <AccountLinkingSettings />
+                        </div>
+                    )}
                 </div>
 
                 {/* Footer */}

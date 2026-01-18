@@ -27,6 +27,7 @@ interface Img2ImgRequest {
 
 // Brand theme style prompts - more specific and detailed
 const BRAND_STYLE_PROMPTS: Record<BrandTheme, string> = {
+    funnelists: 'Transform into Funnelists futuristic tech aesthetic with cyan (#0ea5e9), teal (#14b8a6), and blue (#3b82f6) primary colors, glowing neon lines, circuit board patterns, holographic elements, isometric 3D platforms floating in dark space, cyberpunk data visualization, enterprise AI aesthetic, dark black background with emerald green accents',
     salesforce: 'Transform into Salesforce enterprise aesthetic with bright cyan blue (#00A1E0) color scheme, fluffy white cloud motifs, clean corporate design, professional software interface look, blue gradient backgrounds, modern SaaS visual style',
     general_ai: 'Transform into futuristic AI technology aesthetic with glowing cyan and purple neon accents, abstract neural network patterns, digital data streams, circuit board textures, high-tech sci-fi visualization, dark backgrounds with luminous elements',
     blockchain: 'Transform into blockchain technology aesthetic with interconnected glowing nodes, hexagonal patterns, cryptographic symbols, distributed network visualization, blue and gold metallic accents, decentralized grid patterns',

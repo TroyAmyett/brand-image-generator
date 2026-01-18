@@ -1,4 +1,11 @@
-// Master template prompt generation - brand consistency first
+// Structured Prompt Architecture - Canvas Prompt Engineering System
+// Based on PRD: Predictable output through structured templates and provider optimization
+
+import { ImageProvider } from './providers/types';
+
+// =============================================================================
+// TYPE DEFINITIONS
+// =============================================================================
 
 export type ImageUsage =
     | 'Hero Background' | 'Product/Service Card Image' | 'Icon' | 'Blog Main Image' | 'Social Media Post' | 'Other'
@@ -20,7 +27,43 @@ export type AssetType =
     | 'hero_image' | 'infographic' | 'process_flow' | 'comparison' | 'checklist'
     | 'timeline' | 'diagram' | 'quote_card' | 'stats_highlight' | 'icon_set';
 
-export type BrandTheme = 'salesforce' | 'general_ai' | 'blockchain' | 'neutral' | 'minimal' | 'photorealistic';
+export type BrandTheme = 'funnelists' | 'salesforce' | 'general_ai' | 'blockchain' | 'neutral' | 'minimal' | 'photorealistic';
+
+// =============================================================================
+// PROMPT TEMPLATE INTERFACES
+// =============================================================================
+
+interface PromptParts {
+    style: string;
+    composition: string;
+    subject: string;
+    details: string;
+    brand: BrandThemeDefinition;
+    technical: string;
+    negative: string[];
+}
+
+interface AssetTypeTemplate {
+    style: string;
+    composition: string;
+    technical: string;
+    negatives: string[];
+}
+
+interface BrandThemeDefinition {
+    name: string;
+    colors: {
+        primary: string[];
+        secondary: string[];
+        accent: string[];
+        forbidden: string[];
+        background: string;
+    };
+    styleKeywords: string[];
+    mood: string[];
+    visualStyle: string;
+    avoidKeywords: string[];
+}
 
 export interface GenerateImageParams {
     usage: ImageUsage;
@@ -31,72 +74,495 @@ export interface GenerateImageParams {
     style_variant?: StyleVariant;
     asset_type?: AssetType;
     brand_theme?: BrandTheme;
-    is_asset_set?: boolean; // When true, generates master optimized for cropping
+    is_asset_set?: boolean;
+    provider?: ImageProvider;
 }
 
-// Brand theme anchor text (for tech themes)
-const BRAND_THEME_ANCHORS: Record<BrandTheme, string> = {
-    salesforce: "with a glowing Salesforce-style cloud icon as the central anchoring element",
-    general_ai: "with an abstract glowing AI core as the central element",
-    blockchain: "with interconnected blockchain nodes and distributed ledger chains as the central anchoring element",
-    neutral: "",
-    minimal: "",
-    photorealistic: ""
+export interface StructuredPromptResult {
+    prompt: string;
+    negativePrompt: string;
+}
+
+// =============================================================================
+// UNIVERSAL NEGATIVE PROMPTS
+// =============================================================================
+
+const UNIVERSAL_NEGATIVES = [
+    "text", "words", "letters", "numbers", "watermark",
+    "signature", "logo", "label", "caption", "title",
+    "blurry", "low quality", "pixelated", "distorted",
+    "cropped", "out of frame", "duplicate"
+];
+
+// =============================================================================
+// ASSET TYPE TEMPLATES
+// =============================================================================
+
+const ASSET_TYPE_TEMPLATES: Record<string, AssetTypeTemplate> = {
+    diagram: {
+        style: "Clean technical illustration, isometric 3D, vector-style graphics, flat design elements, infographic style",
+        composition: "Centered layout, balanced symmetry, clear visual hierarchy, organized sections without text labels",
+        technical: "Sharp edges, crisp lines, high contrast, professional presentation graphic, clean geometric shapes",
+        negatives: ["photorealism", "people", "faces", "busy backgrounds", "organic textures", "hand-drawn elements"]
+    },
+    hero_image: {
+        style: "Cinematic, atmospheric, dramatic lighting, professional photography style, stylized illustration",
+        composition: "Wide aspect ratio, subject positioned for text overlay space, depth of field, rule of thirds",
+        technical: "High resolution, 4K quality, suitable for web hero section, wide cinematic view",
+        negatives: ["cluttered composition", "multiple focal points", "small details", "busy patterns"]
+    },
+    icon_set: {
+        style: "Minimal, symbolic, clean iconography, single concept, flat design",
+        composition: "Centered single element, simple background, clear silhouette, generous padding",
+        technical: "Works at small sizes, high contrast, recognizable at 64px, bold shapes",
+        negatives: ["fine detail", "realism", "background elements", "gradients", "complex shapes", "3D effects"]
+    },
+    infographic: {
+        style: "Bold, eye-catching, scroll-stopping, data visualization style",
+        composition: "Strong focal point, readable at small size, brand-consistent, clear sections",
+        technical: "Platform-specific dimensions, high saturation, strong contrast, clean layout",
+        negatives: ["fine details that get lost", "subtle colors", "complex patterns", "photorealism"]
+    },
+    process_flow: {
+        style: "Flowchart visualization, connected nodes, step-by-step visual, clean technical",
+        composition: "Left-to-right or top-to-bottom flow, connected elements, clear progression",
+        technical: "Clean lines, distinct stages, professional diagram, logical flow",
+        negatives: ["organic shapes", "photorealism", "people", "complex backgrounds"]
+    },
+    comparison: {
+        style: "Side-by-side visualization, comparative layout, balanced presentation",
+        composition: "Symmetrical split, clear distinction between sides, balanced visual weight",
+        technical: "High contrast between options, clear differentiation, professional layout",
+        negatives: ["merged elements", "confusing overlap", "unclear boundaries"]
+    },
+    timeline: {
+        style: "Chronological visualization, milestone markers, progressive flow",
+        composition: "Linear progression, clear time markers, connected events",
+        technical: "Clean connecting lines, distinct markers, readable at scale",
+        negatives: ["circular layouts", "complex branching", "dense clustering"]
+    },
+    stats_highlight: {
+        style: "Data visualization, metric-focused, impactful numbers visualization",
+        composition: "Central metric focus, supporting visual elements, clean emphasis",
+        technical: "Bold visual impact, clear data representation, professional charts",
+        negatives: ["complex backgrounds", "distracting elements", "low contrast"]
+    },
+    quote_card: {
+        style: "Elegant, sophisticated, text-friendly background, subtle visual",
+        composition: "Large negative space for text overlay, subtle visual interest, balanced",
+        technical: "Muted colors, soft focus areas, professional backdrop",
+        negatives: ["busy patterns", "high contrast areas", "multiple focal points"]
+    },
+    checklist: {
+        style: "Organized list visualization, checkbox aesthetic, structured layout",
+        composition: "Vertical stacking, aligned elements, clear item separation",
+        technical: "Clean organization, professional structure, clear visual markers",
+        negatives: ["overlapping elements", "complex backgrounds", "distracting details"]
+    }
 };
 
-// Themes that use simplified non-tech templates
-const SIMPLIFIED_THEMES: BrandTheme[] = ['minimal', 'photorealistic'];
+// Default template for unknown asset types
+const DEFAULT_ASSET_TEMPLATE: AssetTypeTemplate = ASSET_TYPE_TEMPLATES.hero_image;
 
-// Negative prompt - for tech/cyberpunk themes
-const NEGATIVE_PROMPT_TECH = "no people, no faces, no robots, no humanoids, no text, no words, no letters, no blurry elements, no low resolution, no distortion, no noise, no clutter, no cartoon style, no flat illustration, no watermark, no brains, no abstract blobs";
+// =============================================================================
+// BRAND THEME DEFINITIONS
+// =============================================================================
 
-// Negative prompt - for photorealistic/minimal themes (simpler, no tech assumptions)
-const NEGATIVE_PROMPT_CLEAN = "no text, no words, no letters, no watermarks, no blurry elements, no low resolution, no distortion";
+const BRAND_THEMES: Record<BrandTheme, BrandThemeDefinition> = {
+    funnelists: {
+        name: "Funnelists",
+        colors: {
+            primary: ["cyan #0ea5e9", "teal #14b8a6", "blue #3b82f6"],
+            secondary: ["emerald green #10b981", "green accent lights"],
+            accent: ["subtle purple highlights acceptable"],
+            forbidden: ["no red", "no orange", "no yellow", "no pink", "no warm colors"],
+            background: "dark black background, navy #0a0a0f, deep space black"
+        },
+        styleKeywords: [
+            "futuristic tech aesthetic",
+            "glowing neon lines",
+            "circuit board patterns",
+            "holographic elements",
+            "isometric 3D platforms",
+            "floating in dark space",
+            "cyberpunk data visualization",
+            "enterprise AI aesthetic"
+        ],
+        mood: ["innovative", "professional", "enterprise-grade", "cutting-edge AI", "powerful"],
+        visualStyle: "isometric 3D tech illustration with glowing elements on dark background",
+        avoidKeywords: ["cartoon", "hand-drawn", "vintage", "retro", "watercolor", "sketchy", "warm colors", "friendly", "playful"]
+    },
+    salesforce: {
+        name: "Salesforce",
+        colors: {
+            primary: ["Salesforce blue #00A1E0", "cloud blue", "sky blue #1798c1"],
+            secondary: ["white", "light gray #f3f3f3"],
+            accent: ["orange #FF6D00 sparingly", "green #2e844a for success"],
+            forbidden: ["no dark themes", "no neon", "no purple", "no black backgrounds", "no cyberpunk"],
+            background: "white or light blue gradient background, clean bright backdrop"
+        },
+        styleKeywords: [
+            "friendly and approachable",
+            "clean corporate illustration",
+            "cloud iconography",
+            "connected systems",
+            "customer-centric imagery",
+            "diverse people illustrations",
+            "Salesforce Astro style",
+            "modern SaaS aesthetic"
+        ],
+        mood: ["trustworthy", "friendly", "innovative", "connected", "customer-focused", "approachable"],
+        visualStyle: "clean modern corporate illustration, Salesforce marketing style, bright and optimistic",
+        avoidKeywords: ["dark", "gritty", "cyberpunk", "neon", "futuristic dystopia", "scary", "complex", "technical"]
+    },
+    general_ai: {
+        name: "General AI",
+        colors: {
+            primary: ["electric blue #0077be", "deep blue #1e3a5f"],
+            secondary: ["cyan #0ea5e9", "white highlights"],
+            accent: ["purple #8b5cf6", "magenta glow"],
+            forbidden: ["no orange", "no yellow", "no warm earth tones"],
+            background: "dark gradient background, deep blue to black"
+        },
+        styleKeywords: [
+            "neural network visualization",
+            "AI brain patterns",
+            "machine learning aesthetic",
+            "data streams",
+            "algorithmic patterns",
+            "digital synapses",
+            "abstract AI core"
+        ],
+        mood: ["intelligent", "advanced", "sophisticated", "cutting-edge", "powerful"],
+        visualStyle: "abstract AI visualization with neural network patterns and data flows",
+        avoidKeywords: ["cartoon", "childish", "simple", "hand-drawn", "organic"]
+    },
+    blockchain: {
+        name: "Blockchain",
+        colors: {
+            primary: ["gold #F7931A", "amber #FFA500", "orange-gold"],
+            secondary: ["deep blue #1a1a2e", "purple #6B5B95"],
+            accent: ["white highlights", "silver metallic"],
+            forbidden: ["no pink", "no pastel colors", "no bright green"],
+            background: "dark blue or black background with metallic accents"
+        },
+        styleKeywords: [
+            "interconnected nodes",
+            "distributed ledger chains",
+            "cryptographic patterns",
+            "decentralized network",
+            "hash chain visualization",
+            "digital currency aesthetic",
+            "secure transaction flow"
+        ],
+        mood: ["secure", "decentralized", "transparent", "immutable", "trustless"],
+        visualStyle: "interconnected blockchain nodes and distributed ledger visualization",
+        avoidKeywords: ["centralized", "single point", "organic", "soft", "rounded"]
+    },
+    neutral: {
+        name: "Neutral",
+        colors: {
+            primary: ["slate gray #64748b", "neutral gray #6b7280", "charcoal #374151"],
+            secondary: ["light gray #e5e7eb", "silver #9ca3af"],
+            accent: ["subtle blue #3b82f6 sparingly"],
+            forbidden: ["no bright neon", "no saturated colors"],
+            background: "neutral gray or off-white background"
+        },
+        styleKeywords: [
+            "professional and clean",
+            "corporate neutral",
+            "balanced composition",
+            "understated elegance",
+            "versatile imagery"
+        ],
+        mood: ["professional", "balanced", "versatile", "understated"],
+        visualStyle: "clean professional imagery with neutral color palette",
+        avoidKeywords: ["flashy", "neon", "extreme", "dramatic", "bold colors"]
+    },
+    minimal: {
+        name: "Minimal",
+        colors: {
+            primary: ["white #ffffff", "off-white #fafafa"],
+            secondary: ["light gray #e5e7eb", "subtle gray #f3f4f6"],
+            accent: ["single accent color sparingly", "black #000000 for contrast"],
+            forbidden: ["no multiple bright colors", "no gradients", "no complex patterns"],
+            background: "pure white or very light neutral background"
+        },
+        styleKeywords: [
+            "minimal design",
+            "generous negative space",
+            "single focal point",
+            "clean lines",
+            "elegant simplicity",
+            "modern minimalist"
+        ],
+        mood: ["calm", "sophisticated", "elegant", "refined", "peaceful"],
+        visualStyle: "minimal clean design with generous white space",
+        avoidKeywords: ["complex", "busy", "cluttered", "colorful", "detailed", "ornate", "cyberpunk", "neon"]
+    },
+    photorealistic: {
+        name: "Photorealistic",
+        colors: {
+            primary: ["natural colors", "realistic tones"],
+            secondary: ["environmental colors", "natural lighting"],
+            accent: ["natural accent colors"],
+            forbidden: ["no neon colors", "no unrealistic saturation"],
+            background: "natural environment or studio backdrop"
+        },
+        styleKeywords: [
+            "photorealistic",
+            "natural photography",
+            "real-world setting",
+            "authentic lighting",
+            "professional photography",
+            "natural environment"
+        ],
+        mood: ["authentic", "realistic", "natural", "genuine", "relatable"],
+        visualStyle: "photorealistic professional photography with natural lighting",
+        avoidKeywords: ["illustration", "cartoon", "stylized", "abstract", "neon", "cyberpunk", "digital art"]
+    }
+};
 
-// Generate a subject-specific focal point description
-function generateFocalPoint(subject: string): string {
-    const subjectLower = subject.toLowerCase();
+// Legacy theme mapping for backwards compatibility
+const LEGACY_THEME_MAP: Record<string, BrandTheme> = {
+    'salesforce': 'salesforce',
+    'general_ai': 'general_ai',
+    'blockchain': 'blockchain',
+    'neutral': 'neutral',
+    'minimal': 'minimal',
+    'photorealistic': 'photorealistic'
+};
 
-    // Generate contextual focal point based on subject keywords
-    if (/agent|development|approach|build/i.test(subjectLower)) {
-        return `A central glowing AI development pipeline showing stages from concept to deployment, with agent nodes being constructed and activated. The ${subject} is visualized as an evolving system of interconnected components.`;
-    }
-    if (/automation|workflow|process/i.test(subjectLower)) {
-        return `A flowing automated pipeline where data streams through processing stages. The ${subject} is represented as a seamless flow of glowing data packets moving through connected nodes.`;
-    }
-    if (/integration|connect|api/i.test(subjectLower)) {
-        return `Multiple systems connected by glowing data bridges and API pathways. The ${subject} shows distinct platforms linked by streaming data connections.`;
-    }
-    if (/analytics|dashboard|metrics|report/i.test(subjectLower)) {
-        return `A central holographic display showing real-time data visualizations, charts, and KPI metrics. The ${subject} is presented through floating analytical interfaces.`;
-    }
-    if (/cloud|data|storage/i.test(subjectLower)) {
-        return `A massive cloud infrastructure visualization with data flowing between storage nodes. The ${subject} appears as interconnected cloud systems with glowing data streams.`;
-    }
-    if (/security|protect|shield/i.test(subjectLower)) {
-        return `A protective digital shield surrounding core systems with security layers visible. The ${subject} is visualized as layered defense mechanisms with scanning elements.`;
-    }
-    if (/sales|lead|crm|customer/i.test(subjectLower)) {
-        return `A sales pipeline funnel with leads flowing through qualification stages. The ${subject} shows prospect data transforming as it moves through the conversion process.`;
-    }
-    if (/support|service|help/i.test(subjectLower)) {
-        return `A service hub with multiple support channels connecting to a central resolution center. The ${subject} displays ticket flows and resolution pathways.`;
-    }
+// =============================================================================
+// COMPOSITION INSTRUCTIONS
+// =============================================================================
 
-    // Default: create a subject-specific focal point
-    return `A central visualization representing ${subject}, with glowing elements that embody the core concept. The main focus shows the essence of ${subject} through interconnected technological components.`;
+const HERO_WIDE_COMPOSITION = "ultra-wide cinematic composition with key elements centered in the middle third of the image, leaving negative space on left and right sides suitable for dark fade effects";
+
+const ASSET_SET_COMPOSITION = "composition with all key elements concentrated in the center of the image, leaving generous margins on all sides to allow for cropping to various aspect ratios including square, 4:3, and 21:9 without losing important content";
+
+// =============================================================================
+// PROVIDER-SPECIFIC FORMATTERS
+// =============================================================================
+
+/**
+ * Format prompt for DALL-E 3 - uses natural language paragraphs
+ */
+function formatForDalle(parts: PromptParts): StructuredPromptResult {
+    const brand = parts.brand;
+
+    const prompt = `Create a ${parts.style} image showing ${parts.subject}.
+
+The image should have ${parts.composition}.
+
+${parts.details ? `Include these elements: ${parts.details}.` : ''}
+
+Color palette: Use ${brand.colors.primary.join(", ")} as the primary colors. ${brand.colors.secondary.length > 0 ? `Accent with ${brand.colors.secondary.join(", ")}.` : ''} The background should be ${brand.colors.background}.
+
+Visual style: ${brand.visualStyle}. Keywords: ${brand.styleKeywords.slice(0, 5).join(", ")}.
+
+Mood: ${brand.mood.join(", ")}.
+
+Technical quality: ${parts.technical}. Masterpiece quality, highly detailed.
+
+CRITICAL REQUIREMENTS:
+- ${brand.colors.forbidden.join(". ")}
+- Do NOT include any text, words, letters, numbers, or watermarks in the image
+- ${parts.negative.slice(0, 5).join(", ")}
+- ${brand.avoidKeywords.slice(0, 5).join(", ")}`;
+
+    // DALL-E 3 doesn't use separate negative prompts, so we include them in main prompt
+    return {
+        prompt: prompt.trim(),
+        negativePrompt: ""
+    };
 }
 
-// Hero wide composition instruction for 21:9 crops
-const HERO_WIDE_COMPOSITION = `ultra-wide cinematic composition with key elements centered in the middle third of the image, leaving negative space on left and right sides suitable for dark fade effects`;
+/**
+ * Format prompt for Stability AI - uses comma-separated keywords with negative prompt parameter
+ */
+function formatForStability(parts: PromptParts): StructuredPromptResult {
+    const brand = parts.brand;
 
-// Asset set composition instruction - optimized for center-cropping to multiple ratios
-const ASSET_SET_COMPOSITION = `composition with all key elements concentrated in the center of the image, leaving generous margins on all sides to allow for cropping to various aspect ratios including square, 4:3, and 21:9 without losing important content`;
+    // Build positive prompt with comma-separated keywords (subject first for priority)
+    const positiveElements = [
+        parts.subject, // Subject gets highest priority by being first
+        parts.style,
+        parts.composition,
+        parts.details,
+        ...brand.styleKeywords,
+        ...brand.colors.primary,
+        brand.colors.background,
+        parts.technical,
+        ...brand.mood,
+        "masterpiece", "best quality", "highly detailed", "professional"
+    ].filter(Boolean);
 
+    const positive = positiveElements.join(", ");
+
+    // Build negative prompt with forbidden elements
+    const negativeElements = [
+        "text", "words", "letters", "watermark", "signature", "logo",
+        ...brand.colors.forbidden.map(f => f.replace('no ', '')),
+        ...brand.avoidKeywords,
+        ...parts.negative,
+        "blurry", "low quality", "distorted", "amateur", "poorly drawn"
+    ];
+
+    const negative = [...new Set(negativeElements)].join(", ");
+
+    return {
+        prompt: positive,
+        negativePrompt: negative
+    };
+}
+
+/**
+ * Format prompt for Replicate/Flux - similar to Stability but with some adjustments
+ */
+function formatForReplicate(parts: PromptParts): StructuredPromptResult {
+    // Flux/Replicate works well with Stability-style formatting
+    return formatForStability(parts);
+}
+
+// =============================================================================
+// MAIN PROMPT GENERATION FUNCTIONS
+// =============================================================================
+
+/**
+ * Get asset type template, with fallback to default
+ */
+function getAssetTypeTemplate(assetType?: AssetType): AssetTypeTemplate {
+    if (!assetType) return DEFAULT_ASSET_TEMPLATE;
+
+    // Map common asset types to our templates
+    const mapping: Record<string, keyof typeof ASSET_TYPE_TEMPLATES> = {
+        'hero_image': 'hero_image',
+        'infographic': 'infographic',
+        'process_flow': 'process_flow',
+        'comparison': 'comparison',
+        'checklist': 'checklist',
+        'timeline': 'timeline',
+        'diagram': 'diagram',
+        'quote_card': 'quote_card',
+        'stats_highlight': 'stats_highlight',
+        'icon_set': 'icon_set'
+    };
+
+    const templateKey = mapping[assetType];
+    return templateKey ? ASSET_TYPE_TEMPLATES[templateKey] : DEFAULT_ASSET_TEMPLATE;
+}
+
+/**
+ * Get brand theme definition, with legacy mapping support
+ */
+function getBrandTheme(brandTheme?: BrandTheme | string): BrandThemeDefinition {
+    if (!brandTheme) return BRAND_THEMES.funnelists;
+
+    // Check for legacy theme name
+    const legacyMapped = LEGACY_THEME_MAP[brandTheme];
+    if (legacyMapped) {
+        return BRAND_THEMES[legacyMapped];
+    }
+
+    // Direct lookup
+    if (brandTheme in BRAND_THEMES) {
+        return BRAND_THEMES[brandTheme as BrandTheme];
+    }
+
+    // Default to funnelists
+    return BRAND_THEMES.funnelists;
+}
+
+/**
+ * Build structured prompt parts with subject priority weighting
+ * Subject: 40%, Style/Asset: 25%, Brand: 20%, Details: 15%
+ */
+function buildPromptParts(params: GenerateImageParams): PromptParts {
+    const { subject, additionalDetails, asset_type, brand_theme, dimension, is_asset_set } = params;
+
+    const assetTemplate = getAssetTypeTemplate(asset_type);
+    const brand = getBrandTheme(brand_theme);
+
+    // Determine composition based on dimension or asset set mode
+    let composition = assetTemplate.composition;
+    if (is_asset_set) {
+        composition = `${ASSET_SET_COMPOSITION}. ${assetTemplate.composition}`;
+    } else if (dimension === 'hero_wide') {
+        composition = `${HERO_WIDE_COMPOSITION}. ${assetTemplate.composition}`;
+    }
+
+    // Combine negatives from universal, asset type, and brand
+    const negatives = [
+        ...UNIVERSAL_NEGATIVES,
+        ...assetTemplate.negatives,
+        ...brand.colors.forbidden.map(f => f.replace('no ', '')),
+        ...brand.avoidKeywords
+    ];
+
+    return {
+        style: assetTemplate.style,
+        composition,
+        subject, // Subject is the PRIMARY driver
+        details: additionalDetails || '',
+        brand,
+        technical: assetTemplate.technical,
+        negative: [...new Set(negatives)] // Deduplicate
+    };
+}
+
+/**
+ * Generate structured prompt with provider-specific formatting
+ */
+export function generateStructuredPrompt(params: GenerateImageParams): StructuredPromptResult {
+    const parts = buildPromptParts(params);
+    const provider = params.provider || 'stability';
+
+    switch (provider) {
+        case 'openai':
+            return formatForDalle(parts);
+        case 'stability':
+            return formatForStability(parts);
+        case 'replicate':
+            return formatForReplicate(parts);
+        default:
+            return formatForStability(parts);
+    }
+}
+
+/**
+ * Main prompt generation function - backwards compatible
+ * Returns a single prompt string (negative prompt handled separately for Stability)
+ */
 export function generatePrompt(params: GenerateImageParams): string {
-    const { subject, additionalDetails, brand_theme = 'salesforce', dimension, is_asset_set } = params;
+    const { brand_theme } = params;
 
-    // Add composition instructions based on dimension or asset set mode
+    // For minimal and photorealistic, use simplified prompts
+    if (brand_theme === 'minimal' || brand_theme === 'photorealistic') {
+        return generateSimplifiedPrompt(params);
+    }
+
+    // Use new structured prompt system
+    const result = generateStructuredPrompt(params);
+    return result.prompt;
+}
+
+/**
+ * Get negative prompt for a generation request (for Stability AI)
+ */
+export function getNegativePrompt(params: GenerateImageParams): string {
+    const result = generateStructuredPrompt(params);
+    return result.negativePrompt;
+}
+
+/**
+ * Generate simplified prompts for minimal and photorealistic themes
+ */
+function generateSimplifiedPrompt(params: GenerateImageParams): string {
+    const { subject, additionalDetails, brand_theme, dimension, is_asset_set } = params;
+
+    const details = additionalDetails?.trim() ? ` ${additionalDetails.trim()}` : '';
+
     let compositionInstruction = '';
     if (is_asset_set) {
         compositionInstruction = ` ${ASSET_SET_COMPOSITION}`;
@@ -104,72 +570,33 @@ export function generatePrompt(params: GenerateImageParams): string {
         compositionInstruction = ` ${HERO_WIDE_COMPOSITION}`;
     }
 
-    // Use simplified templates for minimal/photorealistic themes
-    if (SIMPLIFIED_THEMES.includes(brand_theme)) {
-        return generateSimplifiedPrompt(params, compositionInstruction);
-    }
-
-    // Build focal point: use additional details if provided, otherwise generate from subject
-    const focalPointDescription = additionalDetails && additionalDetails.trim()
-        ? additionalDetails.trim()
-        : generateFocalPoint(subject);
-
-    // Get brand theme anchor text
-    const themeAnchor = BRAND_THEME_ANCHORS[brand_theme];
-    const themeText = themeAnchor ? ` ${themeAnchor}` : '';
-
-    // Master template - SUBJECT, FOCAL_POINT_DESCRIPTION, and THEME_ANCHOR change
-    const prompt = `A futuristic AI ${subject}${themeText} visualized as a high-tech cyberpunk data environment.${compositionInstruction} ${focalPointDescription}
-
-Surrounding elements include advanced holographic dashboards, digital control panels displaying analytics and system metrics. Neon circuitry lines run across surfaces like a motherboard, connecting all elements.
-
-Futuristic server structures and glowing tech icons in the background. Floating UI elements, data nodes, and soft glowing orbs distributed throughout.
-
-Color palette: PRIMARY color: deep electric blue (#0077be) and cyan (#0ea5e9) for main elements, glows, and lighting. SECONDARY accent: vibrant green (#22c55e) used sparingly for highlights, small details, and accent points only. DO NOT blend blue and green into teal. Keep colors distinctly separate. Subtle purple highlights for depth, metallic gold and chrome materials. Ultra-clean, glossy surfaces with reflective highlights.
-
-Lighting: dramatic and cinematic, strong neon glow, volumetric light beams, rim lighting, soft bloom, high contrast against dark background.
-
-Style: ultra-detailed 3D render, sci-fi cyberpunk, enterprise AI visualization, holographic interfaces, cinematic lighting. Composition: wide-angle, centered, symmetrical. Mood: powerful, intelligent, cutting-edge innovation.
-
-Hyper-realistic, extremely high detail, crisp focus, 8K resolution, professional concept art, clean and polished.
-
-${NEGATIVE_PROMPT_TECH}`;
-
-    return prompt;
-}
-
-/**
- * Generate simplified prompts for minimal and photorealistic themes
- * These avoid cyberpunk/tech visualization elements completely
- */
-function generateSimplifiedPrompt(params: GenerateImageParams, compositionInstruction: string): string {
-    const { subject, additionalDetails, brand_theme } = params;
-
-    const details = additionalDetails && additionalDetails.trim()
-        ? ` ${additionalDetails.trim()}`
-        : '';
-
     if (brand_theme === 'photorealistic') {
-        // Photorealistic: pure real-world photography style
         return `Single image of ${subject}.${details}${compositionInstruction}
 
-Photorealistic photograph. Natural outdoor setting. Golden hour lighting.
+Photorealistic photograph. Natural setting. Professional photography lighting. Golden hour or studio lighting.
 
-8K, sharp focus, shallow depth of field.
+8K resolution, sharp focus, shallow depth of field, professional quality.
 
-${NEGATIVE_PROMPT_CLEAN}, no collage, no grid, no multiple images`;
+No text, no words, no letters, no watermarks, no collage, no grid, no multiple images, no illustration, no cartoon.`;
     }
 
-    // Minimal: clean abstract/conceptual style
+    // Minimal theme
     return `A minimal, clean visualization of ${subject}.${details}${compositionInstruction}
 
-Simple, elegant composition with generous negative space. Abstract geometric shapes or subtle gradients to represent the concept. No complex machinery, no holograms, no data grids, no neon colors, no cyberpunk elements.
+Simple, elegant composition with generous negative space. Abstract geometric shapes or subtle gradients to represent the concept. Single focal point.
 
-Color palette: sophisticated and restrained. Neutral tones, muted colors. Clean white or dark backgrounds.
+Color palette: sophisticated and restrained. Neutral tones, muted colors. Clean white or light gray background.
 
-Style: modern minimalist design, clean lines, professional and sophisticated.
+Style: modern minimalist design, clean lines, professional and sophisticated. No complex machinery, no holograms, no data grids, no neon colors, no cyberpunk elements.
 
 8K quality, crisp, polished.
 
-${NEGATIVE_PROMPT_CLEAN}`;
+No text, no words, no letters, no watermarks, no busy patterns, no multiple colors.`;
 }
+
+// =============================================================================
+// UTILITY EXPORTS FOR TESTING AND DEBUGGING
+// =============================================================================
+
+export { BRAND_THEMES, ASSET_TYPE_TEMPLATES, UNIVERSAL_NEGATIVES };
+export type { BrandThemeDefinition, AssetTypeTemplate, PromptParts };

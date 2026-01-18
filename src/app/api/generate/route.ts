@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { generatePrompt, GenerateImageParams, StyleVariant, Mood, AssetType, BrandTheme } from '@/lib/prompt';
+import { generatePrompt, getNegativePrompt, GenerateImageParams, StyleVariant, Mood, AssetType, BrandTheme } from '@/lib/prompt';
 import { processAssetSet, bufferToDataUrl, ASSET_VARIANTS } from '@/lib/imageProcessor';
 import { generateImage, ImageProvider, PROVIDER_CONFIGS } from '@/lib/providers';
 import fs from 'fs';
@@ -37,7 +37,7 @@ const VALID_ASSET_TYPES: AssetType[] = [
     'timeline', 'diagram', 'quote_card', 'stats_highlight', 'icon_set'
 ];
 
-const VALID_BRAND_THEMES: BrandTheme[] = ['salesforce', 'general_ai', 'blockchain', 'neutral', 'minimal', 'photorealistic'];
+const VALID_BRAND_THEMES: BrandTheme[] = ['funnelists', 'salesforce', 'general_ai', 'blockchain', 'neutral', 'minimal', 'photorealistic'];
 
 const VALID_OUTPUT_FORMATS = ['png', 'jpg', 'webp'];
 
@@ -350,21 +350,29 @@ export async function POST(request: Request) {
             mood: mood || 'innovative',
             style_variant,
             asset_type: asset_type || 'hero_image',
-            brand_theme: brand_theme || 'salesforce',
-            is_asset_set: isAssetSet
+            brand_theme: brand_theme || 'funnelists', // Default to funnelists theme
+            is_asset_set: isAssetSet,
+            provider: image_provider as ImageProvider // Pass provider for optimized formatting
         };
 
         const prompt = generatePrompt(params);
+        // Get negative prompt for providers that support it (Stability AI, Replicate)
+        const negativePrompt = getNegativePrompt(params);
         // Asset set always generates at 1792x1024 (master 16:9)
         const size = isAssetSet ? "1792x1024" : getDalleSize(dimensions);
         const [width, height] = size.split('x').map(Number);
 
         console.log(`[API] Generating image - Provider: ${image_provider}, Mode: ${generate_mode}, Size: ${size}, Style: ${style_variant || 'auto'}, Mood: ${mood || 'innovative'}, Key source: ${keySource}`);
+        console.log(`[API] Asset Type: ${asset_type || 'hero_image'}, Brand Theme: ${brand_theme || 'funnelists'}`);
+        if (negativePrompt) {
+            console.log(`[API] Negative prompt length: ${negativePrompt.length} chars`);
+        }
 
         // Generate image using the provider abstraction
         const generationResult = await generateImage({
             provider: image_provider as ImageProvider,
             prompt: prompt,
+            negativePrompt: negativePrompt, // Pass negative prompt for Stability AI
             width,
             height,
             quality: 'hd',

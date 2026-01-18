@@ -13,7 +13,7 @@
 
 - **Dominant Glows:** **Electric Cyan / Blue** (#00FFFF variants) and **Neon/Lime Green** (#39FF14). THESE ARE THE PRIMARY BRAND COLORS.
 - **Accents:** Use purple ONLY sparingly for very deep shadows or minor contrast. **Avoid pinks/magentas.**
-- **Base:** Dark background (#000000 to #0A0A1F) to make the Green and Blue pop.
+- **Base:** Dark background (#000000 to #0A0A1F) to make the Blue and Green pop.
 - **Text/Overlays (if any):** Clean white sans-serif (e.g., Salesforce Sans or futuristic equivalent) with subtle cyan glow.
 
 **Key Elements & Compositions**
