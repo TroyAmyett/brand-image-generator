@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Bot, Radio, StickyNote, Palette, Users, ChevronDown } from 'lucide-react';
+import { Bot, StickyNote, Palette, Users, ChevronDown } from 'lucide-react';
 import { getAppUrl } from '@/lib/appUrls';
 
 interface Tool {
@@ -15,7 +15,6 @@ interface Tool {
 
 const tools: Tool[] = [
   { id: 'agentpm', name: 'AgentPM', icon: <Bot size={18} />, description: 'AI project management', href: getAppUrl('agentpm') },
-  { id: 'radar', name: 'Radar', icon: <Radio size={18} />, description: 'Intelligence feed', href: getAppUrl('radar') },
   { id: 'notetaker', name: 'NoteTaker', icon: <StickyNote size={18} />, description: 'Brainstorming & ideation', href: getAppUrl('notetaker') },
   { id: 'canvas', name: 'Canvas', icon: <Palette size={18} />, description: 'AI design & visuals' }, // Current app - no href, no comingSoon
   { id: 'leadgen', name: 'LeadGen', icon: <Users size={18} />, description: 'Lead generation & enrichment', href: getAppUrl('leadgen') },

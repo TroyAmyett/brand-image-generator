@@ -7,7 +7,6 @@ export function getAppUrl(app: string): string {
 
   const devPorts: Record<string, number> = {
     agentpm: 3000,
-    radar: 3001,
     notetaker: 3000, // same as agentpm - it's the same app
     canvas: 3003,
     leadgen: 3004,
@@ -15,7 +14,6 @@ export function getAppUrl(app: string): string {
 
   const prodDomains: Record<string, string> = {
     agentpm: 'agentpm.funnelists.com',
-    radar: 'radar.funnelists.com',
     notetaker: 'notetaker.funnelists.com',
     canvas: 'canvas.funnelists.com',
     leadgen: 'leadgen.funnelists.com',
