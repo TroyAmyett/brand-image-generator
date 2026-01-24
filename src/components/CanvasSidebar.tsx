@@ -1,6 +1,6 @@
 'use client';
 
-import { Sparkles, History, LayoutTemplate, Settings } from 'lucide-react';
+import { Sparkles, History, LayoutTemplate, Settings, Palette, Bot } from 'lucide-react';
 
 export type CanvasTab = 'generate' | 'history' | 'templates' | 'settings';
 
@@ -14,9 +14,8 @@ const sidebarItems: SidebarItem[] = [
   { id: 'generate', label: 'Generate', icon: Sparkles },
   { id: 'history', label: 'History', icon: History },
   { id: 'templates', label: 'Templates', icon: LayoutTemplate },
+  { id: 'settings', label: 'Settings', icon: Settings },
 ];
-
-const settingsItem: SidebarItem = { id: 'settings', label: 'Settings', icon: Settings };
 
 interface CanvasSidebarProps {
   activeTab: CanvasTab;
@@ -24,67 +23,86 @@ interface CanvasSidebarProps {
 }
 
 export function CanvasSidebar({ activeTab, onTabChange }: CanvasSidebarProps) {
-  const buttonStyle = (isActive: boolean): React.CSSProperties => ({
-    width: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    padding: '8px 12px',
-    borderRadius: '8px',
-    fontSize: '14px',
-    fontWeight: 500,
-    border: 'none',
-    cursor: 'pointer',
-    transition: 'all 0.15s ease',
-    background: isActive ? '#0ea5e9' : 'transparent',
-    color: isActive ? 'white' : 'var(--fl-color-text-secondary)',
-  });
-
   return (
-    <div
+    <aside
       style={{
-        width: '240px',
+        width: '256px',
         flexShrink: 0,
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
-        borderRight: '1px solid var(--fl-color-border)',
-        background: 'var(--fl-color-bg-surface)',
+        borderRight: '1px solid rgba(255, 255, 255, 0.1)',
+        background: 'rgba(255, 255, 255, 0.05)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        padding: '16px',
       }}
     >
+      {/* App Logo/Name */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 12px', marginBottom: '24px' }}>
+        <Palette style={{ width: '24px', height: '24px', color: '#0ea5e9' }} />
+        <span style={{ fontSize: '18px', fontWeight: 600, color: 'white' }}>Canvas</span>
+      </div>
+
       {/* Navigation Items */}
-      <nav style={{ flex: 1, padding: '16px 12px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          {sidebarItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
+      <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        {sidebarItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = activeTab === item.id;
 
-            return (
-              <button
-                key={item.id}
-                onClick={() => onTabChange(item.id)}
-                style={buttonStyle(isActive)}
-              >
-                <Icon size={20} />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Separator */}
-        <div style={{ margin: '16px 0', borderTop: '1px solid var(--fl-color-border)' }} />
-
-        {/* Settings */}
-        <button
-          onClick={() => onTabChange(settingsItem.id)}
-          style={buttonStyle(activeTab === settingsItem.id)}
-        >
-          <settingsItem.icon size={20} />
-          <span>{settingsItem.label}</span>
-        </button>
+          return (
+            <button
+              key={item.id}
+              onClick={() => onTabChange(item.id)}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '10px 12px',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: 500,
+                border: isActive ? '1px solid rgba(14, 165, 233, 0.3)' : '1px solid transparent',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                background: isActive ? 'rgba(14, 165, 233, 0.2)' : 'transparent',
+                color: isActive ? '#0ea5e9' : 'rgba(255, 255, 255, 0.7)',
+              }}
+            >
+              <Icon size={20} />
+              <span>{item.label}</span>
+            </button>
+          );
+        })}
       </nav>
-    </div>
+
+      {/* Upsell to AgentPM */}
+      <div style={{ marginTop: 'auto', paddingTop: '24px' }}>
+        <a
+          href="https://agentpm.funnelists.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: 'block',
+            padding: '16px',
+            borderRadius: '12px',
+            background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.2), rgba(168, 85, 247, 0.2))',
+            border: '1px solid rgba(14, 165, 233, 0.3)',
+            textDecoration: 'none',
+            transition: 'border-color 0.2s ease',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <Bot style={{ width: '20px', height: '20px', color: '#0ea5e9' }} />
+            <span style={{ fontWeight: 600, color: 'white' }}>Try AgentPM</span>
+          </div>
+          <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', margin: 0 }}>
+            AI planning, agentic project management and more.
+          </p>
+        </a>
+      </div>
+    </aside>
   );
 }
 

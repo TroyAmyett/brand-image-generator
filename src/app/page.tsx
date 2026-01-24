@@ -1077,10 +1077,8 @@ export default function Home() {
 
   return (
     <div className={styles.appLayout}>
-      {/* Fixed Header */}
+      {/* Fixed Header - Glass style, no logo (logo is in sidebar) */}
       <AppHeader
-        logo={<BrandLogo height={32} />}
-        toolName="Canvas"
         settingsButton={
           <>
             <UserMenu />
