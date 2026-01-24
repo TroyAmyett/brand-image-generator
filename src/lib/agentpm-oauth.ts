@@ -1,11 +1,13 @@
 /**
- * AgentPM OAuth Service
- * Handles SSO integration with AgentPM Identity Service via shared Supabase
+ * Funnelists Auth Service
+ * Handles shared authentication across Funnelists ecosystem via Supabase
  *
- * Uses Supabase built-in OAuth (Google) for authentication
+ * Uses email/password authentication with shared sessions across *.funnelists.com
+ * Login happens via AgentPM, then session is shared to Canvas
  */
 
-import { agentpmClient, getAuthRedirectUrl } from "./supabase";
+import { agentpmClient } from "./supabase";
+import { getAppUrl } from "./appUrls";
 
 const STORAGE_KEYS = {
   userProfile: "agentpm_user_profile",
@@ -85,14 +87,11 @@ export function clearSession(): void {
 
 export async function loginWithAgentPM(): Promise<void> {
   if (typeof window === "undefined") return;
-  const { error } = await agentpmClient.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: getAuthRedirectUrl(),
-      queryParams: { access_type: "offline", prompt: "consent" },
-    },
-  });
-  if (error) console.error("Failed to initiate login:", error.message);
+  // Redirect to AgentPM for login (shared auth via Supabase)
+  // After login, user returns to Canvas with shared session cookie
+  const agentpmUrl = getAppUrl('agentpm');
+  const returnUrl = encodeURIComponent(window.location.href);
+  window.location.href = `${agentpmUrl}/login?returnUrl=${returnUrl}`;
 }
 
 export async function logout(): Promise<void> {

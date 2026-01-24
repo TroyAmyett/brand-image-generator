@@ -24,6 +24,7 @@ import {
 import ApiKeySettings from '@/components/ApiKeySettings';
 import { UserMenu } from '@/components/UserMenu';
 import { ToolSwitcher } from '@/components/ToolSwitcher';
+import { useAuth } from '@/contexts/AuthContext';
 import { getApiKey, hasApiKey } from '@/lib/apiKeyManager';
 import ImageUpload, { ImageUploadResult } from '@/components/ImageUpload';
 import TransformationModeSelector, { TransformationMode } from '@/components/TransformationModeSelector';
@@ -143,6 +144,10 @@ const slugify = (text: string): string => {
 };
 
 export default function Home() {
+  // Auth state
+  const { user, isFederated, login } = useAuth();
+  const isLoggedIn = isFederated && user;
+
   // Sidebar tab state
   const [activeTab, setActiveTab] = useState<CanvasTab>('generate');
 
@@ -1203,39 +1208,54 @@ export default function Home() {
               </Button>
             </div>
 
-            <div className={styles.settingsContent}>
-              <div className={styles.settingsSection}>
-                <h3>Style Guide</h3>
-                <p className={styles.settingsDescription}>
-                  Customize the visual style guide used for generating images.
-                </p>
-                {styleGuideLoading && !styleGuide ? (
-                  <div className={styles.settingsLoading}>Loading...</div>
-                ) : (
-                  <Textarea
-                    value={styleGuide}
-                    onChange={(e) => setStyleGuide(e.target.value)}
-                    className={styles.styleGuideEditor}
-                    placeholder="Enter your style guide here..."
-                    rows={15}
-                  />
-                )}
-              </div>
-            </div>
+            {isLoggedIn ? (
+              <>
+                <div className={styles.settingsContent}>
+                  <div className={styles.settingsSection}>
+                    <h3>Style Guide</h3>
+                    <p className={styles.settingsDescription}>
+                      Customize the visual style guide used for generating images.
+                    </p>
+                    {styleGuideLoading && !styleGuide ? (
+                      <div className={styles.settingsLoading}>Loading...</div>
+                    ) : (
+                      <Textarea
+                        value={styleGuide}
+                        onChange={(e) => setStyleGuide(e.target.value)}
+                        className={styles.styleGuideEditor}
+                        placeholder="Enter your style guide here..."
+                        rows={15}
+                      />
+                    )}
+                  </div>
+                </div>
 
-            <div className={styles.settingsFooter}>
-              <Button variant="secondary" onClick={() => setShowSettings(false)}>
-                Cancel
-              </Button>
-              <Button
-                variant="primary"
-                onClick={saveStyleGuide}
-                disabled={styleGuideLoading}
-                isLoading={styleGuideLoading}
-              >
-                {styleGuideLoading ? 'Saving...' : styleGuideSaved ? 'Saved!' : 'Save Changes'}
-              </Button>
-            </div>
+                <div className={styles.settingsFooter}>
+                  <Button variant="secondary" onClick={() => setShowSettings(false)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={saveStyleGuide}
+                    disabled={styleGuideLoading}
+                    isLoading={styleGuideLoading}
+                  >
+                    {styleGuideLoading ? 'Saving...' : styleGuideSaved ? 'Saved!' : 'Save Changes'}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <div className={styles.settingsContent}>
+                <div className={styles.settingsSection}>
+                  <p className={styles.settingsDescription}>
+                    Sign in to access your settings and style guide.
+                  </p>
+                  <Button variant="primary" onClick={login}>
+                    Sign in to Funnelists
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
