@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx:*)",
+      "Bash(npm:*)",
+      "Bash(node:*)",
+      "Bash(git:*)",
+      "Bash(mkdir:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(cp:*)",
+      "Bash(mv:*)",
+      "Bash(rm:*)",
+      "Bash(touch:*)",
+      "Bash(cd:*)",
+      "Bash(pwd:*)",
+      "Bash(echo:*)",
+      "Bash(curl:*)",
+      "Bash(type:*)",
+      "Bash(dir:*)",
+      "Bash(powershell:*)",
+      "Bash(tree:*)",
+      "Bash(xargs:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(nslookup:*)",
+      "Bash(timeout:*)",
+      "WebFetch(domain:skillsmp.com)",
+      "WebSearch"
+    ]
+  }
+}
