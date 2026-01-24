@@ -1078,16 +1078,9 @@ export default function Home() {
 
   return (
     <div className={styles.appLayout}>
-      {/* Fixed Header - Glass style, no logo (logo is in sidebar) */}
+      {/* Fixed Header - Glass style, just user menu on right */}
       <AppHeader
-        settingsButton={
-          <>
-            <UserMenu />
-            <Button variant="icon" onClick={openSettings} title="Settings">
-              <Settings className="w-5 h-5" />
-            </Button>
-          </>
-        }
+        settingsButton={<UserMenu />}
       />
 
       {/* Main Content Area with Sidebar */}

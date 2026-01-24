@@ -1,6 +1,7 @@
 'use client';
 
-import { Sparkles, History, LayoutTemplate, Settings, Palette, Bot } from 'lucide-react';
+import { useState } from 'react';
+import { Sparkles, History, LayoutTemplate, Settings, Palette, Bot, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
 export type CanvasTab = 'generate' | 'history' | 'templates' | 'settings';
 
@@ -23,10 +24,12 @@ interface CanvasSidebarProps {
 }
 
 export function CanvasSidebar({ activeTab, onTabChange }: CanvasSidebarProps) {
+  const [collapsed, setCollapsed] = useState(false);
+
   return (
     <aside
       style={{
-        width: '256px',
+        width: collapsed ? '64px' : '256px',
         flexShrink: 0,
         display: 'flex',
         flexDirection: 'column',
@@ -35,14 +38,66 @@ export function CanvasSidebar({ activeTab, onTabChange }: CanvasSidebarProps) {
         background: 'rgba(255, 255, 255, 0.05)',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
-        padding: '16px',
+        padding: collapsed ? '16px 8px' : '16px',
+        transition: 'width 0.2s ease, padding 0.2s ease',
       }}
     >
-      {/* App Logo/Name */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 12px', marginBottom: '24px' }}>
-        <Palette style={{ width: '24px', height: '24px', color: '#0ea5e9' }} />
-        <span style={{ fontSize: '18px', fontWeight: 600, color: 'white' }}>Canvas</span>
+      {/* App Logo/Name + Collapse Toggle */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: collapsed ? 'center' : 'space-between',
+        padding: collapsed ? '8px 0' : '8px 12px',
+        marginBottom: '24px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Palette style={{ width: '24px', height: '24px', color: '#0ea5e9', flexShrink: 0 }} />
+          {!collapsed && <span style={{ fontSize: '18px', fontWeight: 600, color: 'white' }}>Canvas</span>}
+        </div>
+        {!collapsed && (
+          <button
+            onClick={() => setCollapsed(true)}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '4px',
+              borderRadius: '4px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'rgba(255, 255, 255, 0.5)',
+              transition: 'color 0.2s',
+            }}
+            title="Collapse sidebar"
+          >
+            <PanelLeftClose size={18} />
+          </button>
+        )}
       </div>
+
+      {/* Expand button when collapsed */}
+      {collapsed && (
+        <button
+          onClick={() => setCollapsed(false)}
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: '10px 0',
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'rgba(255, 255, 255, 0.5)',
+            transition: 'color 0.2s, background 0.2s',
+            marginBottom: '8px',
+          }}
+          title="Expand sidebar"
+        >
+          <PanelLeftOpen size={20} />
+        </button>
+      )}
 
       {/* Navigation Items */}
       <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -54,12 +109,14 @@ export function CanvasSidebar({ activeTab, onTabChange }: CanvasSidebarProps) {
             <button
               key={item.id}
               onClick={() => onTabChange(item.id)}
+              title={collapsed ? item.label : undefined}
               style={{
                 width: '100%',
                 display: 'flex',
                 alignItems: 'center',
+                justifyContent: collapsed ? 'center' : 'flex-start',
                 gap: '12px',
-                padding: '10px 12px',
+                padding: collapsed ? '10px 0' : '10px 12px',
                 borderRadius: '8px',
                 fontSize: '14px',
                 fontWeight: 500,
@@ -71,7 +128,7 @@ export function CanvasSidebar({ activeTab, onTabChange }: CanvasSidebarProps) {
               }}
             >
               <Icon size={20} />
-              <span>{item.label}</span>
+              {!collapsed && <span>{item.label}</span>}
             </button>
           );
         })}
@@ -83,23 +140,33 @@ export function CanvasSidebar({ activeTab, onTabChange }: CanvasSidebarProps) {
           href="https://agentpm.funnelists.com"
           target="_blank"
           rel="noopener noreferrer"
+          title={collapsed ? 'Try AgentPM' : undefined}
           style={{
-            display: 'block',
-            padding: '16px',
+            display: 'flex',
+            flexDirection: collapsed ? 'column' : 'row',
+            alignItems: collapsed ? 'center' : 'flex-start',
+            justifyContent: collapsed ? 'center' : 'flex-start',
+            padding: collapsed ? '12px 8px' : '16px',
             borderRadius: '12px',
-            background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.2), rgba(168, 85, 247, 0.2))',
-            border: '1px solid rgba(14, 165, 233, 0.3)',
+            background: 'rgba(0, 0, 0, 0.4)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
             textDecoration: 'none',
             transition: 'border-color 0.2s ease',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+          {collapsed ? (
             <Bot style={{ width: '20px', height: '20px', color: '#0ea5e9' }} />
-            <span style={{ fontWeight: 600, color: 'white' }}>Try AgentPM</span>
-          </div>
-          <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', margin: 0 }}>
-            AI planning, agentic project management and more.
-          </p>
+          ) : (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                <Bot style={{ width: '20px', height: '20px', color: '#0ea5e9' }} />
+                <span style={{ fontWeight: 600, color: 'white' }}>Try AgentPM</span>
+              </div>
+              <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', margin: 0 }}>
+                AI planning, agentic project management and more.
+              </p>
+            </>
+          )}
         </a>
       </div>
     </aside>

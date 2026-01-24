@@ -1,29 +1,72 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/ui/components/Button/Button';
-import { LogIn, LogOut, User, ChevronDown, ExternalLink } from 'lucide-react';
+import { LogIn, LogOut, User } from 'lucide-react';
 import styles from './UserMenu.module.css';
-
-const AGENTPM_URL = process.env.NEXT_PUBLIC_AGENTPM_URL || 'https://agentpm.ai';
 
 export function UserMenu() {
   const { user, isFederated, isLoading, login, logout } = useAuth();
   const [showDropdown, setShowDropdown] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0 });
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const toggleMenu = () => {
+    if (!showDropdown && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setMenuPosition({
+        top: rect.bottom + 8,
+        right: window.innerWidth - rect.right,
+      });
+    }
+    setShowDropdown(!showDropdown);
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(target) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(target)
+      ) {
         setShowDropdown(false);
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside);
+    if (showDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [showDropdown]);
+
+  // Update position on scroll/resize
+  useEffect(() => {
+    const updatePosition = () => {
+      if (showDropdown && buttonRef.current) {
+        const rect = buttonRef.current.getBoundingClientRect();
+        setMenuPosition({
+          top: rect.bottom + 8,
+          right: window.innerWidth - rect.right,
+        });
+      }
+    };
+
+    if (showDropdown) {
+      window.addEventListener('scroll', updatePosition);
+      window.addEventListener('resize', updatePosition);
+    }
+
+    return () => {
+      window.removeEventListener('scroll', updatePosition);
+      window.removeEventListener('resize', updatePosition);
+    };
+  }, [showDropdown]);
 
   const handleLogout = async () => {
     setShowDropdown(false);
@@ -53,60 +96,74 @@ export function UserMenu() {
     );
   }
 
-  // Logged in - show user menu
+  // Logged in - show user icon with dropdown
   return (
-    <div className={styles.userMenuContainer} ref={dropdownRef}>
+    <>
       <button
-        className={styles.userButton}
-        onClick={() => setShowDropdown(!showDropdown)}
+        ref={buttonRef}
+        onClick={toggleMenu}
+        className={styles.userIconButton}
+        style={{
+          width: '36px',
+          height: '36px',
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'rgba(14, 165, 233, 0.2)',
+          border: 'none',
+          cursor: 'pointer',
+          transition: 'background 0.2s',
+        }}
       >
-        {user.avatar_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={user.avatar_url}
-            alt={user.name || user.email}
-            className={styles.avatar}
-          />
-        ) : (
-          <div className={styles.avatarPlaceholder}>
-            <User className="w-4 h-4" />
-          </div>
-        )}
-        <span className={styles.userName}>{user.name || user.email}</span>
-        <ChevronDown className={`w-4 h-4 ${styles.chevron} ${showDropdown ? styles.chevronOpen : ''}`} />
+        <User style={{ width: '20px', height: '20px', color: '#0ea5e9' }} />
       </button>
 
-      {showDropdown && (
-        <div className={styles.dropdown}>
-          <div className={styles.dropdownHeader}>
-            <p className={styles.dropdownEmail}>{user.email}</p>
-            <span className={styles.federatedBadge}>Funnelists</span>
-          </div>
-
-          <div className={styles.dropdownDivider} />
-
-          <a
-            href={`${AGENTPM_URL}/settings/api-keys`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.dropdownItem}
-            onClick={() => setShowDropdown(false)}
-          >
-            <ExternalLink className="w-4 h-4" />
-            Manage API Keys
-          </a>
-
-          <div className={styles.dropdownDivider} />
-
+      {showDropdown && typeof document !== 'undefined' && createPortal(
+        <div
+          ref={menuRef}
+          style={{
+            position: 'fixed',
+            top: menuPosition.top,
+            right: menuPosition.right,
+            width: '192px',
+            padding: '8px 0',
+            borderRadius: '8px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            zIndex: 99999,
+            background: '#111118',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+          }}
+        >
+          {user.email && (
+            <div style={{ padding: '8px 16px', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
+              <p style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.6)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {user.email}
+              </p>
+            </div>
+          )}
           <button
-            className={`${styles.dropdownItem} ${styles.logoutItem}`}
             onClick={handleLogout}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '10px 16px',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '14px',
+              color: 'rgba(255, 255, 255, 0.7)',
+              textAlign: 'left',
+            }}
           >
-            <LogOut className="w-4 h-4" />
-            Sign out
+            <LogOut style={{ width: '16px', height: '16px' }} />
+            <span>Sign Out</span>
           </button>
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   );
 }

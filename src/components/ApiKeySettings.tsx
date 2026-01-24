@@ -14,7 +14,7 @@ import { getApiKeyStatuses as getFederatedApiKeyStatuses } from '@/lib/apiKeyMan
 import { ExternalLink } from 'lucide-react';
 import AccountLinkingSettings from './AccountLinkingSettings';
 
-const AGENTPM_URL = process.env.NEXT_PUBLIC_AGENTPM_URL || 'https://agentpm.ai';
+const AGENTPM_URL = process.env.NEXT_PUBLIC_AGENTPM_URL || 'https://agentpm.funnelists.com';
 
 interface ApiKeySettingsProps {
     isOpen: boolean;
@@ -159,7 +159,7 @@ export default function ApiKeySettings({ isOpen, onClose }: ApiKeySettingsProps)
                                     Your API keys are managed through AgentPM. Keys configured in AgentPM are automatically available in Canvas.
                                 </p>
                                 <a
-                                    href={`${AGENTPM_URL}/settings/api-keys`}
+                                    href={`${AGENTPM_URL}/#settings`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
