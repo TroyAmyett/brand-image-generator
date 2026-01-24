@@ -4,7 +4,6 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import {
   fetchUserProfile,
   getCachedUserProfile,
-  loginWithAgentPM,
   logout as agentpmLogout,
   isAccountLinked,
   initiateAccountLinking,
@@ -19,6 +18,8 @@ interface AuthContextType {
   isFederated: boolean;
   isLinked: boolean;
   isLoading: boolean;
+  showLoginModal: boolean;
+  setShowLoginModal: (show: boolean) => void;
   login: () => void;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -34,6 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isFederated, setIsFederated] = useState(false);
   const [isLinked, setIsLinked] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const [localKeysForMigration, setLocalKeysForMigration] = useState<{ provider: string; keyHint: string }[]>([]);
 
   const refreshUser = useCallback(async () => {
@@ -93,7 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = useCallback(() => {
-    loginWithAgentPM();
+    setShowLoginModal(true);
   }, []);
 
   const logout = useCallback(async () => {
@@ -134,6 +136,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isFederated,
         isLinked,
         isLoading,
+        showLoginModal,
+        setShowLoginModal,
         login,
         logout,
         refreshUser,

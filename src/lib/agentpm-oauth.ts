@@ -2,12 +2,11 @@
  * Funnelists Auth Service
  * Handles shared authentication across Funnelists ecosystem via Supabase
  *
- * Uses email/password authentication with shared sessions across *.funnelists.com
- * Login happens via AgentPM, then session is shared to Canvas
+ * Uses email/password authentication with shared Supabase project
+ * All Funnelists apps share the same user tables
  */
 
 import { agentpmClient } from "./supabase";
-import { getAppUrl } from "./appUrls";
 
 const STORAGE_KEYS = {
   userProfile: "agentpm_user_profile",
@@ -85,13 +84,71 @@ export function clearSession(): void {
   localStorage.removeItem(STORAGE_KEYS.canvasUserId);
 }
 
+// Sign in with email/password using shared Supabase
+export async function signIn(email: string, password: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { data, error } = await agentpmClient.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    if (data.user) {
+      const user: AgentPMUser = {
+        id: data.user.id,
+        email: data.user.email || "",
+        name: data.user.user_metadata?.full_name || data.user.user_metadata?.name,
+        avatar_url: data.user.user_metadata?.avatar_url,
+      };
+      localStorage.setItem(STORAGE_KEYS.userProfile, JSON.stringify(user));
+      localStorage.setItem(STORAGE_KEYS.isFederated, "true");
+    }
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : "Unknown error" };
+  }
+}
+
+// Sign up with email/password using shared Supabase
+export async function signUp(email: string, password: string): Promise<{ success: boolean; needsConfirmation?: boolean; error?: string }> {
+  try {
+    const { data, error } = await agentpmClient.auth.signUp({
+      email,
+      password,
+    });
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    // Check if email confirmation is required
+    if (data.user && !data.session) {
+      return { success: true, needsConfirmation: true };
+    }
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : "Unknown error" };
+  }
+}
+
+// Reset password
+export async function resetPassword(email: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await agentpmClient.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/reset-password`,
+    });
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : "Unknown error" };
+  }
+}
+
+// Legacy function - now just a no-op, login handled via modal
 export async function loginWithAgentPM(): Promise<void> {
-  if (typeof window === "undefined") return;
-  // Redirect to AgentPM for login (shared auth via Supabase)
-  // After login, user returns to Canvas with shared session cookie
-  const agentpmUrl = getAppUrl('agentpm');
-  const returnUrl = encodeURIComponent(window.location.href);
-  window.location.href = `${agentpmUrl}/login?returnUrl=${returnUrl}`;
+  // This is now handled by the login modal in Canvas
+  // Kept for backward compatibility
 }
 
 export async function logout(): Promise<void> {

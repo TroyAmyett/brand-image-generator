@@ -24,6 +24,7 @@ import {
 import ApiKeySettings from '@/components/ApiKeySettings';
 import { UserMenu } from '@/components/UserMenu';
 import { ToolSwitcher } from '@/components/ToolSwitcher';
+import { LoginModal } from '@/components/LoginModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { getApiKey, hasApiKey } from '@/lib/apiKeyManager';
 import ImageUpload, { ImageUploadResult } from '@/components/ImageUpload';
@@ -145,7 +146,7 @@ const slugify = (text: string): string => {
 
 export default function Home() {
   // Auth state
-  const { user, isFederated, login } = useAuth();
+  const { user, isFederated, login, showLoginModal, setShowLoginModal, refreshUser } = useAuth();
   const isLoggedIn = isFederated && user;
 
   // Sidebar tab state
@@ -1259,6 +1260,13 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* Login Modal */}
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onSuccess={() => refreshUser()}
+      />
     </div>
   );
 }
