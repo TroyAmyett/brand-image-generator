@@ -24,7 +24,6 @@ import {
 } from 'lucide-react';
 import ApiKeySettings from '@/components/ApiKeySettings';
 import { UserMenu } from '@/components/UserMenu';
-import { ToolSwitcher } from '@/components/ToolSwitcher';
 import { useAuth } from '@/contexts/AuthContext';
 import { getApiKey, hasApiKey } from '@/lib/apiKeyManager';
 import ImageUpload, { ImageUploadResult } from '@/components/ImageUpload';
@@ -1081,7 +1080,7 @@ export default function Home() {
       {/* Fixed Header */}
       <AppHeader
         logo={<BrandLogo height={32} />}
-        toolSwitcher={<ToolSwitcher />}
+        toolName="Canvas"
         settingsButton={
           <>
             <UserMenu />
