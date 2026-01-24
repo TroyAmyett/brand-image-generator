@@ -21,6 +21,7 @@ import {
   Sparkles,
   FileText,
   Grid,
+  Globe,
 } from 'lucide-react';
 import ApiKeySettings from '@/components/ApiKeySettings';
 import { UserMenu } from '@/components/UserMenu';
@@ -1175,13 +1176,27 @@ export default function Home() {
             )}
 
             <footer className={styles.footer}>
-              <p>API Endpoint: <code className={styles.code}>POST /api/generate</code></p>
-              <p className={styles.versionTag}>{APP_VERSION}</p>
-              <p className={styles.footerBrand}>
-                <a href={brand.links.website} target="_blank" rel="noopener noreferrer">
+              <div className={styles.footerLeft}>
+                <p>API Endpoint: <code className={styles.code}>POST /api/generate</code></p>
+                <p className={styles.versionTag}>{APP_VERSION}</p>
+              </div>
+              <div className={styles.footerRight}>
+                <div className={styles.footerBadge}>
+                  <Globe className="w-4 h-4" style={{ color: '#34d399' }} />
+                  <span>Built with Claude Code</span>
+                </div>
+                <a
+                  href="https://calendly.com/funnelists"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={styles.footerCta}
+                >
+                  Build your AI app
+                </a>
+                <a href={brand.links.website} target="_blank" rel="noopener noreferrer" className={styles.footerBrand}>
                   {brand.footer}
                 </a>
-              </p>
+              </div>
             </footer>
           </div>
         </main>
