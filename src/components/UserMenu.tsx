@@ -48,7 +48,7 @@ export function UserMenu() {
         onClick={login}
         className={styles.signInButton}
       >
-        Sign in with AgentPM
+        Sign in
       </Button>
     );
   }
@@ -80,7 +80,7 @@ export function UserMenu() {
         <div className={styles.dropdown}>
           <div className={styles.dropdownHeader}>
             <p className={styles.dropdownEmail}>{user.email}</p>
-            <span className={styles.federatedBadge}>via AgentPM</span>
+            <span className={styles.federatedBadge}>Funnelists</span>
           </div>
 
           <div className={styles.dropdownDivider} />
@@ -93,7 +93,7 @@ export function UserMenu() {
             onClick={() => setShowDropdown(false)}
           >
             <ExternalLink className="w-4 h-4" />
-            Manage API Keys in AgentPM
+            Manage API Keys
           </a>
 
           <div className={styles.dropdownDivider} />
