@@ -16,7 +16,7 @@ interface Tool {
 const tools: Tool[] = [
   { id: 'agentpm', name: 'AgentPM', icon: <Bot size={18} />, description: 'AI project management', href: getAppUrl('agentpm') },
   { id: 'notetaker', name: 'NoteTaker', icon: <StickyNote size={18} />, description: 'Brainstorming & ideation', href: getAppUrl('notetaker') },
-  { id: 'canvas', name: 'Canvas', icon: <Palette size={18} />, description: 'AI design & visuals' }, // Current app - no href, no comingSoon
+  { id: 'canvas', name: 'Canvas', icon: <Palette size={18} />, description: 'AI design & visuals' },
   { id: 'leadgen', name: 'LeadGen', icon: <Users size={18} />, description: 'Lead generation & enrichment', href: getAppUrl('leadgen') },
 ];
 
@@ -27,22 +27,52 @@ export function ToolSwitcher() {
   const active = tools.find(t => t.id === CURRENT_APP) || tools[0];
 
   return (
-    <div className="relative">
+    <div style={{ position: 'relative' }}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors hover:bg-[var(--fl-color-bg-elevated)]"
-        style={{ color: 'var(--fl-color-text-primary)' }}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '6px 12px',
+          borderRadius: '8px',
+          border: 'none',
+          background: 'transparent',
+          cursor: 'pointer',
+          transition: 'background 0.15s ease',
+          color: 'var(--fl-color-text-primary)',
+        }}
       >
         {active.icon}
-        <span className="font-medium">{active.name}</span>
-        <ChevronDown size={14} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <span style={{ fontWeight: 500 }}>{active.name}</span>
+        <ChevronDown
+          size={14}
+          style={{
+            transition: 'transform 0.15s ease',
+            transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+          }}
+        />
       </button>
       {isOpen && (
         <>
-          <div className="fixed inset-0" style={{ zIndex: 350 }} onClick={() => setIsOpen(false)} />
           <div
-            className="absolute left-0 top-full mt-1 rounded-lg shadow-lg min-w-[220px]"
-            style={{ zIndex: 400, background: 'var(--fl-color-bg-surface)', border: '1px solid var(--fl-color-border)' }}
+            style={{ position: 'fixed', inset: 0, zIndex: 350 }}
+            onClick={() => setIsOpen(false)}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: '100%',
+              marginTop: '4px',
+              borderRadius: '8px',
+              boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+              minWidth: '220px',
+              zIndex: 400,
+              background: 'var(--fl-color-bg-surface)',
+              border: '1px solid var(--fl-color-border)',
+              overflow: 'hidden',
+            }}
           >
             {tools.map(tool => (
               <button
@@ -55,28 +85,41 @@ export function ToolSwitcher() {
                   setIsOpen(false);
                 }}
                 disabled={tool.comingSoon}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
-                  tool.comingSoon
-                    ? 'opacity-50 cursor-not-allowed'
-                    : 'hover:bg-[var(--fl-color-bg-elevated)]'
-                } ${tool.id === CURRENT_APP ? 'bg-[var(--fl-color-bg-elevated)]' : ''}`}
-                style={{ color: 'var(--fl-color-text-primary)' }}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '10px 16px',
+                  textAlign: 'left',
+                  border: 'none',
+                  cursor: tool.comingSoon ? 'not-allowed' : 'pointer',
+                  opacity: tool.comingSoon ? 0.5 : 1,
+                  background: tool.id === CURRENT_APP ? 'var(--fl-color-bg-elevated)' : 'transparent',
+                  color: 'var(--fl-color-text-primary)',
+                  transition: 'background 0.15s ease',
+                }}
               >
                 {tool.icon}
-                <div className="flex-1">
-                  <div className="font-medium flex items-center gap-2">
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}>
                     {tool.name}
                     {tool.comingSoon && (
                       <span
-                        className="text-[10px] px-1.5 py-0.5 rounded"
-                        style={{ background: 'rgba(14, 165, 233, 0.2)', color: '#0ea5e9' }}
+                        style={{
+                          fontSize: '10px',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          background: 'rgba(14, 165, 233, 0.2)',
+                          color: '#0ea5e9',
+                        }}
                       >
                         Soon
                       </span>
                     )}
                   </div>
                   {tool.description && (
-                    <div className="text-xs" style={{ color: 'var(--fl-color-text-muted)' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--fl-color-text-muted)' }}>
                       {tool.description}
                     </div>
                   )}

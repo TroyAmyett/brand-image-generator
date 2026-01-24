@@ -24,17 +24,37 @@ interface CanvasSidebarProps {
 }
 
 export function CanvasSidebar({ activeTab, onTabChange }: CanvasSidebarProps) {
+  const buttonStyle = (isActive: boolean): React.CSSProperties => ({
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '8px 12px',
+    borderRadius: '8px',
+    fontSize: '14px',
+    fontWeight: 500,
+    border: 'none',
+    cursor: 'pointer',
+    transition: 'all 0.15s ease',
+    background: isActive ? '#0ea5e9' : 'transparent',
+    color: isActive ? 'white' : 'var(--fl-color-text-secondary)',
+  });
+
   return (
     <div
-      className="w-60 flex-shrink-0 flex flex-col h-full border-r"
       style={{
+        width: '240px',
+        flexShrink: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        borderRight: '1px solid var(--fl-color-border)',
         background: 'var(--fl-color-bg-surface)',
-        borderColor: 'var(--fl-color-border)',
       }}
     >
       {/* Navigation Items */}
-      <nav className="flex-1 py-4 px-3">
-        <div className="space-y-1">
+      <nav style={{ flex: 1, padding: '16px 12px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           {sidebarItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -43,14 +63,9 @@ export function CanvasSidebar({ activeTab, onTabChange }: CanvasSidebarProps) {
               <button
                 key={item.id}
                 onClick={() => onTabChange(item.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'bg-[#0ea5e9] text-white'
-                    : 'hover:bg-white/10'
-                }`}
-                style={{ color: isActive ? 'white' : 'var(--fl-color-text-secondary)' }}
+                style={buttonStyle(isActive)}
               >
-                <Icon className="w-5 h-5" />
+                <Icon size={20} />
                 <span>{item.label}</span>
               </button>
             );
@@ -58,19 +73,14 @@ export function CanvasSidebar({ activeTab, onTabChange }: CanvasSidebarProps) {
         </div>
 
         {/* Separator */}
-        <div className="my-4 border-t" style={{ borderColor: 'var(--fl-color-border)' }} />
+        <div style={{ margin: '16px 0', borderTop: '1px solid var(--fl-color-border)' }} />
 
         {/* Settings */}
         <button
           onClick={() => onTabChange(settingsItem.id)}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-            activeTab === settingsItem.id
-              ? 'bg-[#0ea5e9] text-white'
-              : 'hover:bg-white/10'
-          }`}
-          style={{ color: activeTab === settingsItem.id ? 'white' : 'var(--fl-color-text-secondary)' }}
+          style={buttonStyle(activeTab === settingsItem.id)}
         >
-          <settingsItem.icon className="w-5 h-5" />
+          <settingsItem.icon size={20} />
           <span>{settingsItem.label}</span>
         </button>
       </nav>
