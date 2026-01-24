@@ -11,8 +11,10 @@
   justify-content: space-between;
   height: 56px;
   padding: 0 var(--fl-spacing-lg);
-  background-color: var(--fl-color-bg-elevated);
-  border-bottom: 1px solid var(--fl-color-border);
+  background-color: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .fl-app-header__left {
