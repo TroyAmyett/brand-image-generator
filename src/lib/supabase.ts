@@ -12,13 +12,14 @@ if (typeof window !== 'undefined' && (!AGENTPM_SUPABASE_ANON_KEY || AGENTPM_SUPA
   );
 }
 
-// Create Supabase client for AgentPM with auth persistence
+// Create Supabase client with shared auth storage key
+// All Funnelists apps must use the same storageKey for session sharing
 export const agentpmClient: SupabaseClient = createClient(AGENTPM_SUPABASE_URL, AGENTPM_SUPABASE_ANON_KEY, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    storageKey: 'agentpm-auth',
+    storageKey: 'funnelists-auth', // Shared across all Funnelists apps
   },
 });
 
