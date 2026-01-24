@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import {
-  isFederatedUser,
   fetchUserProfile,
   getCachedUserProfile,
   loginWithAgentPM,
@@ -11,6 +10,7 @@ import {
   initiateAccountLinking,
   unlinkAccount as agentpmUnlinkAccount,
   getLocalApiKeysForMigration,
+  initAuthListener,
   AgentPMUser,
 } from '@/lib/agentpm-oauth';
 
@@ -39,30 +39,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshUser = useCallback(async () => {
     setIsLoading(true);
     try {
-      const federated = isFederatedUser();
-      const linked = isAccountLinked();
-      setIsFederated(federated);
-      setIsLinked(linked);
+      // Try cached profile first for faster initial render
+      const cached = getCachedUserProfile();
+      if (cached) {
+        setUser(cached);
+        setIsFederated(true);
+      }
 
-      if (federated || linked) {
-        // Try cached profile first
-        const cached = getCachedUserProfile();
-        if (cached) {
-          setUser(cached);
-        }
-
-        // Fetch fresh profile
-        const profile = await fetchUserProfile();
-        if (profile) {
-          setUser(profile);
-        } else if (!cached) {
-          // No cached profile and failed to fetch - session may be invalid
-          setIsFederated(false);
-          setIsLinked(false);
-          setUser(null);
-        }
+      // Always try to fetch from Supabase session (not just when localStorage flag is set)
+      // This handles cases where user has valid session but localStorage was cleared
+      const profile = await fetchUserProfile();
+      if (profile) {
+        setUser(profile);
+        setIsFederated(true);
+        setIsLinked(isAccountLinked());
       } else {
+        // No valid session - clear everything
         setUser(null);
+        setIsFederated(false);
+        setIsLinked(false);
       }
 
       // Get local keys for potential migration
@@ -80,6 +75,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     refreshUser();
   }, [refreshUser]);
+
+  // Listen for auth state changes (login/logout events)
+  useEffect(() => {
+    const unsubscribe = initAuthListener((authUser) => {
+      if (authUser) {
+        setUser(authUser);
+        setIsFederated(true);
+        setIsLinked(isAccountLinked());
+      } else {
+        setUser(null);
+        setIsFederated(false);
+        setIsLinked(false);
+      }
+    });
+    return unsubscribe;
+  }, []);
 
   const login = useCallback(() => {
     loginWithAgentPM();
