@@ -7,6 +7,7 @@ import { APP_VERSION } from '@/lib/version';
 import { brand, applyBrandColors } from '@/lib/brand';
 import { BrandLogo } from '@/components/BrandLogo';
 import { CanvasSidebar, type CanvasTab } from '@/components/CanvasSidebar';
+import { CanvasToolNav } from '@/components/CanvasToolNav';
 import {
   Settings,
   X,
@@ -26,6 +27,8 @@ import {
 import ApiKeySettings from '@/components/ApiKeySettings';
 import { UserMenu } from '@/components/UserMenu';
 import { useAuth } from '@/contexts/AuthContext';
+import { useChangelog } from '@/hooks/useChangelog';
+import { ChangelogBadge, ChangelogDrawer, WhatsNewModal } from '@/components/changelog';
 import { getApiKey, hasApiKey } from '@/lib/apiKeyManager';
 import ImageUpload, { ImageUploadResult } from '@/components/ImageUpload';
 import TransformationModeSelector, { TransformationMode } from '@/components/TransformationModeSelector';
@@ -35,6 +38,7 @@ import ComparisonView from '@/components/ComparisonView';
 
 // Funnelists UI Components
 import { AppHeader } from '@/ui/components/AppHeader/AppHeader';
+import { AppFooter } from '@/components/shared/AppFooter';
 import { Button } from '@/ui/components/Button/Button';
 import { Input } from '@/ui/components/Input/Input';
 import { Select, type SelectOption } from '@/ui/components/Select/Select';
@@ -148,6 +152,28 @@ export default function Home() {
   // Auth state
   const { user, isFederated, isLoading, refreshUser } = useAuth();
   const isLoggedIn = isFederated && user;
+
+  // Changelog hook
+  const {
+    entries: changelogEntries,
+    unreadCount,
+    unreadHighlights,
+    isLoading: changelogLoading,
+    isDrawerOpen,
+    isWhatsNewOpen,
+    fetchEntries,
+    markAsRead,
+    markAllAsRead,
+    dismissHighlights,
+    openDrawer,
+    closeDrawer,
+    closeWhatsNew,
+  } = useChangelog(user?.id, 'canvas');
+
+  const handleViewAllChangelog = () => {
+    closeWhatsNew();
+    openDrawer();
+  };
 
   // Sidebar tab state
   const [activeTab, setActiveTab] = useState<CanvasTab>('generate');
@@ -1078,9 +1104,15 @@ export default function Home() {
 
   return (
     <div className={styles.appLayout}>
-      {/* Fixed Header - Glass style, just user menu on right */}
+      {/* Fixed Header - Glass style with tool navigation */}
       <AppHeader
-        settingsButton={<UserMenu />}
+        toolSwitcher={<CanvasToolNav />}
+        settingsButton={
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {isLoggedIn && <ChangelogBadge unreadCount={unreadCount} onClick={openDrawer} />}
+            <UserMenu />
+          </div>
+        }
       />
 
       {/* Main Content Area with Sidebar */}
@@ -1168,29 +1200,7 @@ export default function Home() {
               </div>
             )}
 
-            <footer className={styles.footer}>
-              <div className={styles.footerLeft}>
-                <p>API Endpoint: <code className={styles.code}>POST /api/generate</code></p>
-                <p className={styles.versionTag}>{APP_VERSION}</p>
-              </div>
-              <div className={styles.footerRight}>
-                <div className={styles.footerBadge}>
-                  <Globe className="w-4 h-4" style={{ color: '#34d399' }} />
-                  <span>Built with Claude Code</span>
-                </div>
-                <a
-                  href="https://calendly.com/funnelists"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={styles.footerCta}
-                >
-                  Build your AI app
-                </a>
-                <a href={brand.links.website} target="_blank" rel="noopener noreferrer" className={styles.footerBrand}>
-                  {brand.footer}
-                </a>
-              </div>
-            </footer>
+            <AppFooter />
           </div>
         </main>
       </div>
@@ -1270,6 +1280,24 @@ export default function Home() {
         </div>
       )}
 
+      {/* Changelog Drawer */}
+      <ChangelogDrawer
+        isOpen={isDrawerOpen}
+        onClose={closeDrawer}
+        entries={changelogEntries}
+        isLoading={changelogLoading}
+        onMarkAllRead={markAllAsRead}
+        onMarkAsRead={markAsRead}
+        onFetchEntries={fetchEntries}
+      />
+
+      {/* What's New Modal */}
+      <WhatsNewModal
+        isOpen={isWhatsNewOpen}
+        highlights={unreadHighlights}
+        onDismiss={dismissHighlights}
+        onViewAll={handleViewAllChangelog}
+      />
     </div>
   );
 }
