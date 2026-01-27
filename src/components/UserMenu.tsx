@@ -2,13 +2,15 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/ui/components/Button/Button';
-import { LogIn, LogOut, User } from 'lucide-react';
+import { LogIn, LogOut, User, Settings } from 'lucide-react';
 import styles from './UserMenu.module.css';
 
 export function UserMenu() {
   const { user, isFederated, isLoading, login, logout } = useAuth();
+  const router = useRouter();
   const [showDropdown, setShowDropdown] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0 });
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -142,6 +144,28 @@ export function UserMenu() {
               </p>
             </div>
           )}
+          <button
+            onClick={() => {
+              setShowDropdown(false);
+              router.push('/config');
+            }}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '10px 16px',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '14px',
+              color: 'rgba(255, 255, 255, 0.7)',
+              textAlign: 'left',
+            }}
+          >
+            <Settings style={{ width: '16px', height: '16px' }} />
+            <span>Config</span>
+          </button>
           <button
             onClick={handleLogout}
             style={{
