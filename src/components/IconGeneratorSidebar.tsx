@@ -40,6 +40,7 @@ export function IconGeneratorSidebar({
 
   // API Key state
   const [hasAnthropicKey, setHasAnthropicKey] = useState(false);
+  const [hasPlatformKey, setHasPlatformKey] = useState(false);
   const [isCheckingKey, setIsCheckingKey] = useState(true);
   const [keyInput, setKeyInput] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -49,8 +50,16 @@ export function IconGeneratorSidebar({
   const checkApiKey = useCallback(async () => {
     setIsCheckingKey(true);
     try {
+      // Check user's stored key
       const hasKey = await hasApiKey('anthropic');
       setHasAnthropicKey(hasKey);
+
+      // Check platform key availability
+      const response = await fetch('/api/platform-keys');
+      if (response.ok) {
+        const data = await response.json();
+        setHasPlatformKey(data.platformKeys?.anthropic || false);
+      }
     } catch (error) {
       console.error('Error checking API key:', error);
     } finally {
@@ -170,7 +179,7 @@ export function IconGeneratorSidebar({
             ? 'AI will detect and extract the icon from your logo'
             : 'Use the entire image as-is'}
         </p>
-        {mode === 'auto' && !hasAnthropicKey && !isCheckingKey && (
+        {mode === 'auto' && !hasAnthropicKey && !hasPlatformKey && !isCheckingKey && (
           <div
             style={{
               marginTop: '8px',
