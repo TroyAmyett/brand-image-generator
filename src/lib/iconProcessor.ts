@@ -103,6 +103,8 @@ export async function detectIconBounds(
 
 The image dimensions are ${width}x${height} pixels.
 
+IMPORTANT: Make sure to capture the COMPLETE icon/symbol including all extremities (tips, edges, shadows, fine details). It is better to include slightly too much area than to clip any part of the icon.
+
 Return ONLY a JSON object with the bounding box of the icon/symbol in pixels:
 {"x": <left>, "y": <top>, "width": <width>, "height": <height>}
 
@@ -141,11 +143,15 @@ Return ONLY the JSON, no other text.`,
       throw new Error('Invalid bounds format');
     }
 
-    // Ensure bounds are within image
-    bounds.x = Math.max(0, Math.min(bounds.x, width));
-    bounds.y = Math.max(0, Math.min(bounds.y, height));
-    bounds.width = Math.min(bounds.width, width - bounds.x);
-    bounds.height = Math.min(bounds.height, height - bounds.y);
+    // Add a 5% buffer around detected bounds to prevent edge clipping
+    const bufferPercent = 0.05;
+    const bufferX = Math.round(bounds.width * bufferPercent);
+    const bufferY = Math.round(bounds.height * bufferPercent);
+
+    bounds.x = Math.max(0, bounds.x - bufferX);
+    bounds.y = Math.max(0, bounds.y - bufferY);
+    bounds.width = Math.min(bounds.width + bufferX * 2, width - bounds.x);
+    bounds.height = Math.min(bounds.height + bufferY * 2, height - bounds.y);
 
     return bounds;
   } catch (e) {

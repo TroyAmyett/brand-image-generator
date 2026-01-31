@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
+    "@funnelists/auth": "file:../packages/auth",
     "@funnelists/ui": "file:../packages/ui",
     "@supabase/supabase-js": "^2.90.1",
     "lucide-react": "^0.562.0",

@@ -1,13 +1,22 @@
 /**
  * Unified API Key Manager
  * Provides a single interface for getting API keys from either:
- * 1. AgentPM (for federated users)
+ * 1. AgentPM (for federated users) - uses shared @funnelists/auth
  * 2. Local storage (for standalone users)
  */
 
 import { ImageProvider } from './providers/types';
 import { getApiKey as getLocalApiKey, getApiKeyStatuses as getLocalApiKeyStatuses, ApiKeyStatus } from './apiKeyStorage';
-import { isFederatedUser, getAgentPMApiKey, fetchAgentPMApiKeys, ApiKeyInfo } from './agentpm-oauth';
+import { isFederatedUser, getAgentPMApiKey, fetchAgentPMApiKeys, ApiKeyInfo, getCachedUserProfile } from './agentpm-oauth';
+import {
+  resolveApiKey,
+  type AuthContext,
+  type AIProvider as SharedAIProvider,
+  AGENTPM_URLS,
+} from '@funnelists/auth';
+
+// AgentPM URL for API calls
+const AGENTPM_URL = process.env.NEXT_PUBLIC_AGENTPM_URL || AGENTPM_URLS.production;
 
 // Reverse map - maps Canvas provider IDs to AgentPM provider names
 const REVERSE_PROVIDER_MAP: Record<ImageProvider, string[]> = {
@@ -18,24 +27,44 @@ const REVERSE_PROVIDER_MAP: Record<ImageProvider, string[]> = {
 };
 
 /**
+ * Build auth context for federated users
+ */
+function buildFederatedAuthContext(): AuthContext {
+  const user = getCachedUserProfile();
+  return {
+    userId: user?.id,
+    // For Canvas, we don't have full account info locally
+    // The shared service will fetch from AgentPM
+    account: null,
+    profile: user ? { id: user.id } : null,
+  };
+}
+
+/**
  * Get an API key for a specific provider
- * For federated users: fetches from AgentPM
+ * For federated users: uses shared @funnelists/auth to fetch from AgentPM
  * For standalone users: fetches from local storage
  */
 export async function getApiKey(provider: ImageProvider): Promise<string | null> {
   // Check if user is federated (logged in via AgentPM SSO)
   if (isFederatedUser()) {
-    // Try all possible provider name variations
-    const providerNames = REVERSE_PROVIDER_MAP[provider] || [provider];
+    const context = buildFederatedAuthContext();
 
-    for (const providerName of providerNames) {
-      const key = await getAgentPMApiKey(providerName);
-      if (key) {
-        return key;
-      }
-    }
+    // Map ImageProvider to SharedAIProvider if needed
+    const sharedProvider = provider as SharedAIProvider;
 
-    return null;
+    // Use shared resolver to get the key
+    const result = await resolveApiKey({
+      provider: sharedProvider,
+      context,
+      config: {
+        agentpmUrl: AGENTPM_URL,
+        // Canvas doesn't have platform keys - always BYOK for image generation
+        platformKeys: {},
+      },
+    });
+
+    return result.key;
   }
 
   // Standalone user - use local storage
