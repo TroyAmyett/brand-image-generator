@@ -133,6 +133,7 @@ const NEGATIVE_PROMPT_ELEMENTS = [
 
 /**
  * Build color instruction string from color overrides.
+ * Uses strong language so image models treat colors as a hard constraint.
  */
 function buildColorInstruction(colors: {
   primary?: string;
@@ -140,11 +141,11 @@ function buildColorInstruction(colors: {
   accent?: string;
 }): string {
   const parts: string[] = [];
-  if (colors.primary) parts.push(`primary color ${colors.primary}`);
-  if (colors.secondary) parts.push(`secondary color ${colors.secondary}`);
-  if (colors.accent) parts.push(`accent color ${colors.accent}`);
+  if (colors.primary) parts.push(`primary: ${colors.primary}`);
+  if (colors.secondary) parts.push(`secondary: ${colors.secondary}`);
+  if (colors.accent) parts.push(`accent: ${colors.accent}`);
   if (parts.length === 0) return '';
-  return `Color palette: ${parts.join(', ')}.`;
+  return `STRICT COLOR REQUIREMENT: The logo must use ONLY these exact colors — ${parts.join(', ')}. Do not introduce gold, orange, yellow, brown, or any colors not listed here. The entire design should be limited to the specified palette plus white and black.`;
 }
 
 /**
@@ -192,11 +193,11 @@ export function buildLogoPrompt(params: {
   // 6. Refinement instructions (if user is iterating)
   const refinementStr = refinement ? `Additional refinement: ${refinement}.` : '';
 
-  // Compose the full prompt
+  // Compose the full prompt — color instruction placed early for emphasis
   const promptParts = [
     typeTemplate,
-    `Style: ${styleModifier}.`,
     colorInstruction,
+    `Style: ${styleModifier}.`,
     universalStr,
     providerHint,
     refinementStr,
@@ -204,8 +205,12 @@ export function buildLogoPrompt(params: {
 
   const prompt = promptParts.join(' ');
 
-  // Build negative prompt
-  const negativePrompt = NEGATIVE_PROMPT_ELEMENTS.join(', ');
+  // Build negative prompt — add off-palette colors when overrides are specified
+  let negativeElements = [...NEGATIVE_PROMPT_ELEMENTS];
+  if (colors && (colors.primary || colors.secondary || colors.accent)) {
+    negativeElements.push('gold', 'orange', 'yellow', 'brown', 'red', 'off-brand colors', 'random colors');
+  }
+  const negativePrompt = negativeElements.join(', ');
 
   return { prompt, negativePrompt };
 }

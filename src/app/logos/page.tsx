@@ -102,6 +102,7 @@ const selectStyle: React.CSSProperties = {
   cursor: 'pointer',
   appearance: 'none' as const,
   backgroundImage: 'none',
+  colorScheme: 'dark',
 };
 
 function chipStyle(active: boolean): React.CSSProperties {
