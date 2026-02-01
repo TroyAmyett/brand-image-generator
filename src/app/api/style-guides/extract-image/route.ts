@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { getApiKey } from '@/lib/apiKeyManager';
-import { extractFromImage } from '@funnelists/brand';
+import { extractFromImage } from '@/lib/brand-kit';
 
 /**
  * POST /api/style-guides/extract-image

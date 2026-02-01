@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Plus, Pencil, Check } from 'lucide-react';
-import type { BrandStyleGuide } from '@funnelists/brand';
+import type { BrandStyleGuide } from '@/lib/brand-kit';
 
 interface StyleGuidePickerProps {
   guides: BrandStyleGuide[];

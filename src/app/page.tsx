@@ -34,7 +34,7 @@ import { ChatPanel } from '@/components/chat';
 import { MessageSquare } from 'lucide-react';
 import StyleGuidePicker from '@/components/StyleGuidePicker';
 import StyleGuideEditor from '@/components/StyleGuideEditor';
-import type { BrandStyleGuide } from '@funnelists/brand';
+import type { BrandStyleGuide } from '@/lib/brand-kit';
 import ImageUpload, { ImageUploadResult } from '@/components/ImageUpload';
 import TransformationModeSelector, { TransformationMode } from '@/components/TransformationModeSelector';
 import StyleStrengthSlider from '@/components/StyleStrengthSlider';

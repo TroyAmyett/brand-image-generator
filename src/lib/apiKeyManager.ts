@@ -13,7 +13,7 @@ import {
   type AuthContext,
   type AIProvider as SharedAIProvider,
   AGENTPM_URLS,
-} from '@funnelists/auth';
+} from '@/lib/auth-kit';
 
 // AgentPM URL for API calls
 const AGENTPM_URL = process.env.NEXT_PUBLIC_AGENTPM_URL || AGENTPM_URLS.production;

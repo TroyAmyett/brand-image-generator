@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { X, Sparkles, AlertCircle } from 'lucide-react'
 import { ChatMessage } from './ChatMessage'
 import { ChatInput } from './ChatInput'
-import type { BrandStyleGuide } from '@funnelists/brand'
+import type { BrandStyleGuide } from '@/lib/brand-kit'
 
 // ---------------------------------------------------------------------------
 // Types

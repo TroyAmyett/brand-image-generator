@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { X } from 'lucide-react';
-import type { ColorEntry } from '@funnelists/brand';
+import type { ColorEntry } from '@/lib/brand-kit';
 
 interface ColorSwatchInputProps {
   color: ColorEntry;

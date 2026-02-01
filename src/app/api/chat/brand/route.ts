@@ -2,7 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { getApiKey } from '@/lib/apiKeyManager';
 import fs from 'fs';
 import path from 'path';
-import type { BrandStyleGuide } from '@funnelists/brand';
+import type { BrandStyleGuide } from '@/lib/brand-kit';
 
 // ---------------------------------------------------------------------------
 // Style guide loading (same pattern as other API routes)

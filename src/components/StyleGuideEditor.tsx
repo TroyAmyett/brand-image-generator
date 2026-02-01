@@ -2,7 +2,7 @@
 
 import { useState, useRef, KeyboardEvent } from 'react';
 import { ArrowLeft, Plus, X, Globe, Upload, Loader2, Trash2, Save } from 'lucide-react';
-import type { BrandStyleGuide, ColorEntry } from '@funnelists/brand';
+import type { BrandStyleGuide, ColorEntry } from '@/lib/brand-kit';
 import ColorSwatchInput from './ColorSwatchInput';
 
 interface StyleGuideEditorProps {

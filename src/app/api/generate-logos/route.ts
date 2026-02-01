@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { generateImage, ImageProvider, PROVIDER_CONFIGS } from '@/lib/providers';
 import { buildLogoPrompt, LogoType, LogoStyle } from '@/lib/logoPrompt';
-import type { BrandStyleGuide } from '@funnelists/brand';
+import type { BrandStyleGuide } from '@/lib/brand-kit';
 import fs from 'fs';
 import path from 'path';
 

@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
-import { getPreset, slugify } from '@funnelists/brand';
-import type { BrandStyleGuide } from '@funnelists/brand';
+import { getPreset, slugify } from '@/lib/brand-kit';
+import type { BrandStyleGuide } from '@/lib/brand-kit';
 
 /** Storage directory for style guide JSON files */
 const GUIDES_DIR = path.join(process.cwd(), 'data', 'style-guides');

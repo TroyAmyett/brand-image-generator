@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import { generatePrompt, getNegativePrompt, GenerateImageParams, StyleVariant, Mood, AssetType, BrandTheme, BrandThemeDefinition } from '@/lib/prompt';
 import { processAssetSet, bufferToDataUrl, ASSET_VARIANTS } from '@/lib/imageProcessor';
 import { generateImage, ImageProvider, PROVIDER_CONFIGS } from '@/lib/providers';
-import { toLegacyTheme } from '@funnelists/brand';
-import type { BrandStyleGuide } from '@funnelists/brand';
+import { toLegacyTheme } from '@/lib/brand-kit';
+import type { BrandStyleGuide } from '@/lib/brand-kit';
 import fs from 'fs';
 import path from 'path';
 

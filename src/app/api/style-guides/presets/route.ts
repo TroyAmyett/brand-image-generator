@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getAllPresets } from '@funnelists/brand';
+import { getAllPresets } from '@/lib/brand-kit';
 
 /**
  * GET /api/style-guides/presets
