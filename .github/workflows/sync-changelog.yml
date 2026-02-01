@@ -113,16 +113,18 @@ jobs:
             if (!latestHash) latestHash = hash.trim();
 
             const match = subject.trim().match(conventionalRegex);
-            if (!match) {
-              // Non-conventional commit, skip
-              console.log(`Skipping non-conventional commit: ${subject.trim().slice(0, 60)}`);
-              continue;
+
+            let type, title;
+            if (match) {
+              [, type, , title] = match;
+            } else {
+              // Non-conventional commit: treat as 'update' type
+              type = 'update';
+              title = subject.trim();
             }
 
-            const [, type, scope, title] = match;
-
             // Skip certain types
-            if (['ci', 'build', 'test', 'style'].includes(type)) {
+            if (['ci', 'build', 'test', 'style', 'chore'].includes(type)) {
               console.log(`Skipping ${type} commit: ${title}`);
               continue;
             }

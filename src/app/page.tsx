@@ -24,14 +24,13 @@ import {
   Grid,
   Globe,
 } from 'lucide-react';
-import ApiKeySettings from '@/components/ApiKeySettings';
 import { UserMenu } from '@/components/UserMenu';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChangelog } from '@/hooks/useChangelog';
 import { ChangelogBadge, ChangelogDrawer, WhatsNewModal } from '@/components/changelog';
 import { getApiKey, hasApiKey } from '@/lib/apiKeyManager';
 import { ChatPanel } from '@/components/chat';
-import { MessageSquare } from 'lucide-react';
+import { Bot } from 'lucide-react';
 import StyleGuidePicker from '@/components/StyleGuidePicker';
 import StyleGuideEditor from '@/components/StyleGuideEditor';
 import type { BrandStyleGuide } from '@/lib/brand-kit';
@@ -220,7 +219,6 @@ export default function Home() {
   const [styleGuide, setStyleGuide] = useState('');
   const [styleGuideLoading, setStyleGuideLoading] = useState(false);
   const [styleGuideSaved, setStyleGuideSaved] = useState(false);
-  const [showApiKeys, setShowApiKeys] = useState(false);
   const [userApiKeyConfigured, setUserApiKeyConfigured] = useState<Record<string, boolean>>({});
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
 
@@ -837,7 +835,7 @@ export default function Home() {
                 <Button
                   variant="icon"
                   type="button"
-                  onClick={() => setShowApiKeys(true)}
+                  onClick={() => router.push('/config')}
                   title="Manage API Keys"
                 >
                   <Key className="w-4 h-4" />
@@ -1176,7 +1174,7 @@ export default function Home() {
                 <Button
                   variant="icon"
                   type="button"
-                  onClick={() => setShowApiKeys(true)}
+                  onClick={() => router.push('/config')}
                   title="Manage API Keys"
                 >
                   <Key className="w-4 h-4" />
@@ -1325,7 +1323,7 @@ export default function Home() {
                   e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)';
                 }}
               >
-                <MessageSquare size={18} />
+                <Bot size={18} />
               </button>
             )}
             {isLoggedIn && <ChangelogBadge unreadCount={unreadCount} onClick={openDrawer} />}
@@ -1486,15 +1484,6 @@ export default function Home() {
           </div>
         </div>
       )}
-
-      {/* API Keys Modal */}
-      <ApiKeySettings
-        isOpen={showApiKeys}
-        onClose={() => {
-          setShowApiKeys(false);
-          checkUserApiKeys();
-        }}
-      />
 
       {/* Settings Modal */}
       {showSettings && (

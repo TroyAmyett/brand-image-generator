@@ -236,57 +236,30 @@ export default function ConfigPage() {
                   API Keys
                 </h2>
                 <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '14px' }}>
-                  {isFederated || isLinked
-                    ? 'Manage your API keys in AgentPM.'
-                    : 'Add your API keys to enable image generation and icon detection.'}
+                  Add your API keys to enable image generation and icon detection.
                 </p>
               </div>
 
-              {isFederated || isLinked ? (
-                <a
-                  href={`${AGENTPM_URL}/settings`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '10px 16px',
-                    borderRadius: '8px',
-                    background: 'rgba(14, 165, 233, 0.2)',
-                    border: '1px solid rgba(14, 165, 233, 0.3)',
-                    color: '#0ea5e9',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    textDecoration: 'none',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  Manage in AgentPM
-                  <ExternalLink size={14} />
-                </a>
-              ) : (
-                <button
-                  onClick={() => setShowAddModal(true)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '10px 16px',
-                    borderRadius: '8px',
-                    background: '#0ea5e9',
-                    border: 'none',
-                    color: 'white',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  <Plus size={16} />
-                  Add Key
-                </button>
-              )}
+              <button
+                onClick={() => setShowAddModal(true)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 16px',
+                  borderRadius: '8px',
+                  background: '#0ea5e9',
+                  border: 'none',
+                  color: 'white',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <Plus size={16} />
+                Add Key
+              </button>
             </div>
 
             {/* Keys List */}
@@ -362,23 +335,21 @@ export default function ConfigPage() {
                           </div>
                         </div>
                       </div>
-                      {!(isFederated || isLinked) && (
-                        <button
-                          onClick={() => handleDeleteKey(keyStatus.provider)}
-                          style={{
-                            padding: '8px',
-                            background: 'none',
-                            border: 'none',
-                            color: 'rgba(255, 255, 255, 0.4)',
-                            cursor: 'pointer',
-                            borderRadius: '4px',
-                            transition: 'color 0.15s ease',
-                          }}
-                          title="Delete key"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      )}
+                      <button
+                        onClick={() => handleDeleteKey(keyStatus.provider)}
+                        style={{
+                          padding: '8px',
+                          background: 'none',
+                          border: 'none',
+                          color: 'rgba(255, 255, 255, 0.4)',
+                          cursor: 'pointer',
+                          borderRadius: '4px',
+                          transition: 'color 0.15s ease',
+                        }}
+                        title="Delete key"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
                   );
                 })}
@@ -386,8 +357,7 @@ export default function ConfigPage() {
             )}
 
             {/* Provider Reference */}
-            {!(isFederated || isLinked) && (
-              <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+            <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
                 <h3 style={{ fontSize: '14px', fontWeight: 600, color: 'rgba(255, 255, 255, 0.7)', marginBottom: '12px' }}>
                   Supported Providers
                 </h3>
@@ -418,7 +388,6 @@ export default function ConfigPage() {
                   ))}
                 </div>
               </div>
-            )}
           </div>
 
 

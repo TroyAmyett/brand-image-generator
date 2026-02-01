@@ -3,14 +3,16 @@
 .fl-select-wrapper {
   display: flex;
   flex-direction: column;
-  gap: var(--fl-spacing-xs);
+  gap: 6px;
   width: 100%;
+  margin-bottom: 1.25rem;
 }
 
 .fl-select__label {
-  font-size: var(--fl-font-size-sm);
-  font-weight: var(--fl-font-weight-medium);
-  color: var(--fl-color-text-primary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.01em;
 }
 
 .fl-select__container {
