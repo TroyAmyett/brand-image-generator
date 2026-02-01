@@ -15,13 +15,47 @@ export function ChangelogBadge({ unreadCount, onClick }: ChangelogBadgeProps) {
     <button
       onClick={onClick}
       title="What's New"
-      className="relative p-2 rounded-lg transition-colors hover:bg-slate-800 text-slate-300"
+      style={{
+        position: 'relative',
+        padding: '8px',
+        borderRadius: '8px',
+        border: 'none',
+        background: 'transparent',
+        color: 'rgba(255, 255, 255, 0.7)',
+        cursor: 'pointer',
+        transition: 'all 0.15s ease',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+        e.currentTarget.style.color = '#ffffff';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = 'transparent';
+        e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)';
+      }}
     >
       <Bell size={18} />
       {unreadCount > 0 && (
         <span
-          className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-medium rounded-full bg-red-500 text-white"
-          style={{ padding: '0 4px' }}
+          style={{
+            position: 'absolute',
+            top: '-2px',
+            right: '-2px',
+            minWidth: '18px',
+            height: '18px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '10px',
+            fontWeight: 500,
+            borderRadius: '9999px',
+            backgroundColor: '#ef4444',
+            color: '#ffffff',
+            padding: '0 4px',
+          }}
         >
           {unreadCount > 99 ? '99+' : unreadCount}
         </span>

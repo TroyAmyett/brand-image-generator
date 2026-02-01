@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './page.module.css';
 import { APP_VERSION } from '@/lib/version';
@@ -30,6 +30,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useChangelog } from '@/hooks/useChangelog';
 import { ChangelogBadge, ChangelogDrawer, WhatsNewModal } from '@/components/changelog';
 import { getApiKey, hasApiKey } from '@/lib/apiKeyManager';
+import { ChatPanel } from '@/components/chat';
+import { MessageSquare } from 'lucide-react';
+import StyleGuidePicker from '@/components/StyleGuidePicker';
+import StyleGuideEditor from '@/components/StyleGuideEditor';
+import type { BrandStyleGuide } from '@funnelists/brand';
 import ImageUpload, { ImageUploadResult } from '@/components/ImageUpload';
 import TransformationModeSelector, { TransformationMode } from '@/components/TransformationModeSelector';
 import StyleStrengthSlider from '@/components/StyleStrengthSlider';
@@ -38,7 +43,7 @@ import ComparisonView from '@/components/ComparisonView';
 
 // Funnelists UI Components
 import { AppHeader } from '@/ui/components/AppHeader/AppHeader';
-import { AppFooter } from '@/components/shared/AppFooter';
+
 import { Button } from '@/ui/components/Button/Button';
 import { Input } from '@/ui/components/Input/Input';
 import { Select, type SelectOption } from '@/ui/components/Select/Select';
@@ -93,11 +98,16 @@ const STYLE_OPTIONS: SelectOption[] = [
   { value: 'cinematic', label: 'Cinematic' },
 ];
 
-// Updated Brand Theme options (removed Funnelists and Photorealistic)
+// Brand Theme options - 'custom' uses the active style guide
 const BRAND_THEME_OPTIONS: SelectOption[] = [
-  { value: 'none', label: 'None' },
-  { value: 'my_brand', label: 'My Brand' },
+  { value: 'custom', label: 'Active Style Guide' },
+  { value: 'funnelists', label: 'Funnelists' },
   { value: 'salesforce', label: 'Salesforce' },
+  { value: 'general_ai', label: 'General AI' },
+  { value: 'neutral', label: 'Neutral' },
+  { value: 'minimal', label: 'Minimal' },
+  { value: 'photorealistic', label: 'Photorealistic' },
+  { value: 'none', label: 'None' },
 ];
 
 const IMAGE_PROVIDER_OPTIONS: SelectOption[] = [
@@ -212,6 +222,23 @@ export default function Home() {
   const [styleGuideSaved, setStyleGuideSaved] = useState(false);
   const [showApiKeys, setShowApiKeys] = useState(false);
   const [userApiKeyConfigured, setUserApiKeyConfigured] = useState<Record<string, boolean>>({});
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+
+  // Brand / Style Guide state
+  const [styleGuides, setStyleGuides] = useState<BrandStyleGuide[]>([]);
+  const [activeGuideId, setActiveGuideId] = useState('funnelists');
+  const [editingGuide, setEditingGuide] = useState<BrandStyleGuide | null>(null);
+  const [isCreatingGuide, setIsCreatingGuide] = useState(false);
+  const [isExtractingBrand, setIsExtractingBrand] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+
+  const handleImageError = useCallback((imageUrl: string) => {
+    setFailedImages(prev => {
+      const next = new Set(prev);
+      next.add(imageUrl);
+      return next;
+    });
+  }, []);
 
   // Image-to-Image state
   const [img2imgSourceImage, setImg2imgSourceImage] = useState<ImageUploadResult | null>(null);
@@ -286,6 +313,163 @@ export default function Home() {
     fetchStyleGuide();
   };
 
+  // Fetch Style Guides
+  const fetchStyleGuides = async () => {
+    try {
+      const response = await fetch('/api/style-guides');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setStyleGuides(data.guides || []);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch style guides:', error);
+    }
+  };
+
+  // Fetch Active Guide
+  const fetchActiveGuide = async () => {
+    try {
+      const response = await fetch('/api/style-guides/active');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.activeGuideId) {
+          setActiveGuideId(data.activeGuideId);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch active guide:', error);
+    }
+  };
+
+  // Set Active Guide
+  const setActiveStyleGuide = async (id: string) => {
+    try {
+      const response = await fetch('/api/style-guides/active', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ activeGuideId: id }),
+      });
+      if (response.ok) {
+        setActiveGuideId(id);
+      }
+    } catch (error) {
+      console.error('Failed to set active guide:', error);
+    }
+  };
+
+  // Save Style Guide (create or update)
+  const saveGuide = async (guide: BrandStyleGuide) => {
+    try {
+      const isNew = isCreatingGuide;
+      const method = isNew ? 'POST' : 'PUT';
+      const url = isNew ? '/api/style-guides' : `/api/style-guides/${guide.id}`;
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(guide),
+      });
+      if (response.ok) {
+        setEditingGuide(null);
+        setIsCreatingGuide(false);
+        fetchStyleGuides();
+      }
+    } catch (error) {
+      console.error('Failed to save style guide:', error);
+    }
+  };
+
+  // Delete Style Guide
+  const deleteGuide = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this style guide?')) return;
+    try {
+      const response = await fetch(`/api/style-guides/${id}`, { method: 'DELETE' });
+      if (response.ok) {
+        setEditingGuide(null);
+        fetchStyleGuides();
+        fetchActiveGuide();
+      }
+    } catch (error) {
+      console.error('Failed to delete style guide:', error);
+    }
+  };
+
+  // Create New Guide
+  const createNewGuide = () => {
+    const now = new Date().toISOString();
+    const newGuide: BrandStyleGuide = {
+      id: '',
+      name: '',
+      description: '',
+      colors: {
+        primary: [{ hex: '#0ea5e9', name: 'Primary Blue' }],
+        secondary: [{ hex: '#10b981', name: 'Secondary Green' }],
+        accent: [{ hex: '#8b5cf6', name: 'Accent Purple' }],
+        forbidden: [],
+        background: 'dark background',
+      },
+      typography: {},
+      visualStyle: {
+        styleKeywords: [],
+        mood: [],
+        description: '',
+        avoidKeywords: [],
+      },
+      createdAt: now,
+      updatedAt: now,
+    };
+    setIsCreatingGuide(true);
+    setEditingGuide(newGuide);
+  };
+
+  // Extract from URL
+  const extractFromUrl = async (url: string) => {
+    setIsExtractingBrand(true);
+    try {
+      const response = await fetch('/api/style-guides/extract-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.guide) {
+          setEditingGuide(data.guide);
+          setIsCreatingGuide(true);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to extract from URL:', error);
+    } finally {
+      setIsExtractingBrand(false);
+    }
+  };
+
+  // Extract from Image
+  const extractFromImage = async (file: File) => {
+    setIsExtractingBrand(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const response = await fetch('/api/style-guides/extract-image', {
+        method: 'POST',
+        body: formData,
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.guide) {
+          setEditingGuide(data.guide);
+          setIsCreatingGuide(true);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to extract from image:', error);
+    } finally {
+      setIsExtractingBrand(false);
+    }
+  };
+
   // Check which providers have user API keys configured
   const checkUserApiKeys = async () => {
     const configured: Record<string, boolean> = {};
@@ -299,6 +483,8 @@ export default function Home() {
     fetchHistory();
     applyBrandColors();
     checkUserApiKeys();
+    fetchStyleGuides();
+    fetchActiveGuide();
   }, []);
 
   // Loading Cycle Logic for Text-to-Image
@@ -899,8 +1085,8 @@ export default function Home() {
               <span className={styles.generationsLabel}>Recent Generations</span>
             </div>
             <div className={styles.generationsGrid}>
-              {history.length > 0 ? (
-                history.slice(0, 8).map((item, idx) => (
+              {history.filter(item => !failedImages.has(item.imageUrl)).length > 0 ? (
+                history.filter(item => !failedImages.has(item.imageUrl)).slice(0, 8).map((item, idx) => (
                   <div
                     key={idx}
                     className={styles.generationThumb}
@@ -908,7 +1094,11 @@ export default function Home() {
                     title={item.title || item.subject}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={item.imageUrl} alt={item.title || item.subject} />
+                    <img
+                      src={item.imageUrl}
+                      alt={item.title || item.subject}
+                      onError={() => handleImageError(item.imageUrl)}
+                    />
                   </div>
                 ))
               ) : (
@@ -1109,6 +1299,35 @@ export default function Home() {
         toolSwitcher={<CanvasToolNav />}
         settingsButton={
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {isLoggedIn && (
+              <button
+                onClick={() => setIsChatOpen(true)}
+                title="Brand Assistant"
+                style={{
+                  position: 'relative',
+                  padding: '8px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: 'transparent',
+                  color: 'rgba(255, 255, 255, 0.7)',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                  e.currentTarget.style.color = '#ffffff';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)';
+                }}
+              >
+                <MessageSquare size={18} />
+              </button>
+            )}
             {isLoggedIn && <ChangelogBadge unreadCount={unreadCount} onClick={openDrawer} />}
             <UserMenu />
           </div>
@@ -1156,8 +1375,8 @@ export default function Home() {
                   <p>View and reuse your previous generations</p>
                 </div>
                 <div className={styles.historyFullGrid}>
-                  {history.length > 0 ? (
-                    history.map((item, idx) => (
+                  {history.filter(item => !failedImages.has(item.imageUrl)).length > 0 ? (
+                    history.filter(item => !failedImages.has(item.imageUrl)).map((item, idx) => (
                       <div
                         key={idx}
                         className={styles.historyFullItem}
@@ -1167,7 +1386,11 @@ export default function Home() {
                         }}
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={item.imageUrl} alt={item.title || item.subject} />
+                        <img
+                          src={item.imageUrl}
+                          alt={item.title || item.subject}
+                          onError={() => handleImageError(item.imageUrl)}
+                        />
                         <div className={styles.historyFullInfo}>
                           <span className={styles.historyFullTitle}>{item.title || item.subject}</span>
                           <span className={styles.historyFullMeta}>{item.dimension} | {item.style || 'Default'}</span>
@@ -1182,6 +1405,47 @@ export default function Home() {
                     </div>
                   )}
                 </div>
+              </div>
+            )}
+
+            {/* Brand Tab */}
+            {activeTab === 'brand' && (
+              <div className={styles.tabContent}>
+                {editingGuide ? (
+                  <StyleGuideEditor
+                    guide={editingGuide}
+                    isNew={isCreatingGuide}
+                    onSave={saveGuide}
+                    onDelete={deleteGuide}
+                    onCancel={() => {
+                      setEditingGuide(null);
+                      setIsCreatingGuide(false);
+                    }}
+                    onExtractFromUrl={extractFromUrl}
+                    onExtractFromImage={extractFromImage}
+                    isExtracting={isExtractingBrand}
+                  />
+                ) : (
+                  <>
+                    <div className={styles.tabHeader}>
+                      <h1>Brand Style Guides</h1>
+                      <p>Manage your brand visual identities for image generation</p>
+                    </div>
+                    <StyleGuidePicker
+                      guides={styleGuides}
+                      activeGuideId={activeGuideId}
+                      onSelect={setActiveStyleGuide}
+                      onCreateNew={createNewGuide}
+                      onEdit={(id) => {
+                        const guide = styleGuides.find(g => g.id === id);
+                        if (guide) {
+                          setEditingGuide(guide);
+                          setIsCreatingGuide(false);
+                        }
+                      }}
+                    />
+                  </>
+                )}
               </div>
             )}
 
@@ -1200,7 +1464,7 @@ export default function Home() {
               </div>
             )}
 
-            <AppFooter />
+
           </div>
         </main>
       </div>
@@ -1297,6 +1561,17 @@ export default function Home() {
         highlights={unreadHighlights}
         onDismiss={dismissHighlights}
         onViewAll={handleViewAllChangelog}
+      />
+
+      {/* AI Brand Chat Panel */}
+      <ChatPanel
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        activeGuideId={activeGuideId}
+        onGuideCreated={(guide) => {
+          fetchStyleGuides();
+          fetchActiveGuide();
+        }}
       />
     </div>
   );

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppHeader } from '@/ui/components/AppHeader/AppHeader';
-import { AppFooter } from '@/components/shared/AppFooter';
+
 import { CanvasToolNav } from '@/components/CanvasToolNav';
 import { UserMenu } from '@/components/UserMenu';
 import { useAuth } from '@/contexts/AuthContext';
@@ -421,7 +421,7 @@ export default function ConfigPage() {
             )}
           </div>
 
-          <AppFooter />
+
         </div>
       </div>
 

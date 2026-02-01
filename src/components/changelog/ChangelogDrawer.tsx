@@ -1,7 +1,7 @@
 'use client'
 
 // Changelog Drawer
-// Slide-out panel showing changelog entries
+// Slide-out panel showing changelog entries, positioned below the app header
 
 import { useEffect, useRef } from 'react'
 import { X, CheckCheck, Loader2 } from 'lucide-react'
@@ -17,6 +17,8 @@ interface ChangelogDrawerProps {
   onMarkAsRead: (ids: string[]) => void
   onFetchEntries: () => void
 }
+
+const HEADER_HEIGHT = 56
 
 export function ChangelogDrawer({
   isOpen,
@@ -60,46 +62,91 @@ export function ChangelogDrawer({
     return () => window.removeEventListener('keydown', handleEscape)
   }, [isOpen, onClose])
 
-  // Prevent body scroll when drawer is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
-    return () => {
-      document.body.style.overflow = ''
-    }
-  }, [isOpen])
-
   const unreadCount = entries.filter((e) => !e.isRead).length
 
   if (!isOpen) return null
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop - below the header */}
       <div
-        className="fixed inset-0 bg-black/50 z-40 transition-opacity"
         onClick={onClose}
+        style={{
+          position: 'fixed',
+          top: HEADER_HEIGHT,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          zIndex: 40,
+          transition: 'opacity 0.2s ease',
+        }}
       />
 
-      {/* Drawer */}
+      {/* Drawer - positioned below header */}
       <div
         ref={drawerRef}
-        className="fixed top-0 right-0 h-full w-full max-w-md flex flex-col bg-slate-900 border-l border-slate-700 z-50 transform transition-transform duration-300"
-        style={{ transform: isOpen ? 'translateX(0)' : 'translateX(100%)' }}
+        style={{
+          position: 'fixed',
+          top: HEADER_HEIGHT,
+          right: 0,
+          bottom: 0,
+          width: '100%',
+          maxWidth: '420px',
+          display: 'flex',
+          flexDirection: 'column',
+          backgroundColor: '#0f172a',
+          borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
+          zIndex: 50,
+          transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
+          transition: 'transform 0.3s ease',
+        }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 flex-shrink-0 border-b border-slate-700">
-          <h2 className="text-lg font-medium text-white">
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '12px 16px',
+            flexShrink: 0,
+            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          }}
+        >
+          <h2
+            style={{
+              fontSize: '18px',
+              fontWeight: 500,
+              color: '#ffffff',
+              margin: 0,
+            }}
+          >
             What&apos;s New
           </h2>
-          <div className="flex items-center gap-2">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {unreadCount > 0 && (
               <button
                 onClick={onMarkAllRead}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-slate-800 text-slate-300"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  border: 'none',
+                  background: 'transparent',
+                  color: 'rgba(255, 255, 255, 0.6)',
+                  cursor: 'pointer',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                }}
               >
                 <CheckCheck size={14} />
                 Mark all read
@@ -107,7 +154,24 @@ export function ChangelogDrawer({
             )}
             <button
               onClick={onClose}
-              className="p-2 rounded-lg transition-colors hover:bg-slate-800 text-slate-300"
+              style={{
+                padding: '8px',
+                borderRadius: '8px',
+                border: 'none',
+                background: 'transparent',
+                color: 'rgba(255, 255, 255, 0.6)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'background 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+              }}
             >
               <X size={20} />
             </button>
@@ -115,19 +179,32 @@ export function ChangelogDrawer({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            padding: '16px',
+          }}
+        >
           {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 size={24} className="animate-spin text-slate-400" />
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '48px 0',
+              }}
+            >
+              <Loader2 size={24} style={{ color: 'rgba(255, 255, 255, 0.4)', animation: 'spin 1s linear infinite' }} />
             </div>
           ) : entries.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-sm text-slate-400">
+            <div style={{ textAlign: 'center', padding: '48px 0' }}>
+              <p style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.4)', margin: 0 }}>
                 No updates yet. Check back later!
               </p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {entries.map((entry) => (
                 <ChangelogEntry key={entry.id} entry={entry} />
               ))}
@@ -135,6 +212,14 @@ export function ChangelogDrawer({
           )}
         </div>
       </div>
+
+      {/* Spin animation for loader */}
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </>
   )
 }

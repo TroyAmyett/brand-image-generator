@@ -1,9 +1,26 @@
 import { NextResponse } from 'next/server';
-import { generatePrompt, getNegativePrompt, GenerateImageParams, StyleVariant, Mood, AssetType, BrandTheme } from '@/lib/prompt';
+import { generatePrompt, getNegativePrompt, GenerateImageParams, StyleVariant, Mood, AssetType, BrandTheme, BrandThemeDefinition } from '@/lib/prompt';
 import { processAssetSet, bufferToDataUrl, ASSET_VARIANTS } from '@/lib/imageProcessor';
 import { generateImage, ImageProvider, PROVIDER_CONFIGS } from '@/lib/providers';
+import { toLegacyTheme } from '@funnelists/brand/converters';
+import type { BrandStyleGuide } from '@funnelists/brand';
 import fs from 'fs';
 import path from 'path';
+
+// Load active style guide from file storage
+function loadActiveStyleGuide(): BrandStyleGuide | null {
+    try {
+        const dir = path.join(process.cwd(), 'data', 'style-guides');
+        const activePath = path.join(dir, '_active.json');
+        if (!fs.existsSync(activePath)) return null;
+        const { activeGuideId } = JSON.parse(fs.readFileSync(activePath, 'utf-8'));
+        const guidePath = path.join(dir, `${activeGuideId}.json`);
+        if (!fs.existsSync(guidePath)) return null;
+        return JSON.parse(fs.readFileSync(guidePath, 'utf-8'));
+    } catch {
+        return null;
+    }
+}
 
 // Valid options for validation
 const VALID_USAGE_CONTEXTS = [
@@ -129,7 +146,7 @@ export async function POST(request: Request) {
         const mood = body.mood as Mood | undefined;
         const style_variant = body.style_variant as StyleVariant | undefined;
         const asset_type = body.asset_type as AssetType | undefined;
-        const brand_theme = body.brand_theme as BrandTheme | undefined;
+        const brand_theme = body.brand_theme as BrandTheme | 'custom' | undefined;
         const additional_details = body.additional_details || body.additionalDetails;
         const output_format = body.output_format || 'png';
         const image_provider = body.image_provider || 'openai';
@@ -260,14 +277,14 @@ export async function POST(request: Request) {
             );
         }
 
-        // Validate optional brand_theme
-        if (brand_theme && !VALID_BRAND_THEMES.includes(brand_theme)) {
+        // Validate optional brand_theme ('custom' uses active style guide)
+        if (brand_theme && brand_theme !== 'custom' && !VALID_BRAND_THEMES.includes(brand_theme)) {
             return NextResponse.json(
                 {
                     success: false,
                     error: {
                         code: 'INVALID_BRAND_THEME',
-                        message: `Invalid brand_theme. Must be one of: ${VALID_BRAND_THEMES.join(', ')}`
+                        message: `Invalid brand_theme. Must be one of: ${VALID_BRAND_THEMES.join(', ')}, custom`
                     }
                 },
                 { status: 400 }
@@ -342,6 +359,20 @@ export async function POST(request: Request) {
 
         // Build prompt using the updated prompt generator
         const isAssetSet = generate_mode === 'asset_set';
+
+        // Load custom brand theme from active style guide if requested
+        let customBrandTheme: BrandThemeDefinition | undefined;
+        let effectiveBrandTheme: BrandTheme | undefined = (brand_theme === 'custom' ? 'funnelists' : brand_theme) || 'funnelists';
+        if (brand_theme === 'custom') {
+            const activeGuide = loadActiveStyleGuide();
+            if (activeGuide) {
+                customBrandTheme = toLegacyTheme(activeGuide) as unknown as BrandThemeDefinition;
+                effectiveBrandTheme = undefined; // custom_brand_theme takes priority
+            } else {
+                effectiveBrandTheme = 'funnelists'; // Fallback if no active guide
+            }
+        }
+
         const params: GenerateImageParams = {
             usage: usage_context,
             dimension: isAssetSet ? 'master' : dimensions, // Asset set always generates master 16:9
@@ -350,7 +381,8 @@ export async function POST(request: Request) {
             mood: mood || 'innovative',
             style_variant,
             asset_type: asset_type || 'hero_image',
-            brand_theme: brand_theme || 'funnelists', // Default to funnelists theme
+            brand_theme: effectiveBrandTheme,
+            custom_brand_theme: customBrandTheme,
             is_asset_set: isAssetSet,
             provider: image_provider as ImageProvider // Pass provider for optimized formatting
         };
@@ -363,7 +395,7 @@ export async function POST(request: Request) {
         const [width, height] = size.split('x').map(Number);
 
         console.log(`[API] Generating image - Provider: ${image_provider}, Mode: ${generate_mode}, Size: ${size}, Style: ${style_variant || 'auto'}, Mood: ${mood || 'innovative'}, Key source: ${keySource}`);
-        console.log(`[API] Asset Type: ${asset_type || 'hero_image'}, Brand Theme: ${brand_theme || 'funnelists'}`);
+        console.log(`[API] Asset Type: ${asset_type || 'hero_image'}, Brand Theme: ${brand_theme || 'funnelists'}${customBrandTheme ? ` (custom: ${customBrandTheme.name})` : ''}`);
         if (negativePrompt) {
             console.log(`[API] Negative prompt length: ${negativePrompt.length} chars`);
         }
@@ -411,7 +443,7 @@ export async function POST(request: Request) {
         const timestamp = new Date().toISOString();
         const appliedStyle = style_variant || 'auto-detected';
         const appliedAssetType = asset_type || 'hero_image';
-        const appliedBrandTheme = brand_theme || 'salesforce';
+        const appliedBrandTheme = customBrandTheme ? `custom:${customBrandTheme.name}` : (brand_theme || 'salesforce');
 
         // Handle Asset Set mode - process variants
         if (isAssetSet) {

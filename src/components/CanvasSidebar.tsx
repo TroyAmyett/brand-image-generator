@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Sparkles, History, LayoutTemplate, Settings, Palette, Bot, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Sparkles, History, LayoutTemplate, Settings, Palette, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
-export type CanvasTab = 'generate' | 'history' | 'templates' | 'settings';
+export type CanvasTab = 'generate' | 'history' | 'brand' | 'templates' | 'settings';
 
 interface SidebarItem {
   id: CanvasTab;
@@ -14,6 +14,7 @@ interface SidebarItem {
 const sidebarItems: SidebarItem[] = [
   { id: 'generate', label: 'Generate', icon: Sparkles },
   { id: 'history', label: 'History', icon: History },
+  { id: 'brand', label: 'Brand', icon: Palette },
   { id: 'templates', label: 'Templates', icon: LayoutTemplate },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
@@ -134,41 +135,6 @@ export function CanvasSidebar({ activeTab, onTabChange }: CanvasSidebarProps) {
         })}
       </nav>
 
-      {/* Upsell to AgentPM */}
-      <div style={{ marginTop: 'auto', paddingTop: '24px' }}>
-        <a
-          href="https://agentpm.funnelists.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          title={collapsed ? 'Try AgentPM' : undefined}
-          style={{
-            display: 'flex',
-            flexDirection: collapsed ? 'column' : 'row',
-            alignItems: collapsed ? 'center' : 'flex-start',
-            justifyContent: collapsed ? 'center' : 'flex-start',
-            padding: collapsed ? '12px 8px' : '16px',
-            borderRadius: '12px',
-            background: 'rgba(0, 0, 0, 0.4)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            textDecoration: 'none',
-            transition: 'border-color 0.2s ease',
-          }}
-        >
-          {collapsed ? (
-            <Bot style={{ width: '20px', height: '20px', color: '#0ea5e9' }} />
-          ) : (
-            <>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                <Bot style={{ width: '20px', height: '20px', color: '#0ea5e9' }} />
-                <span style={{ fontWeight: 600, color: 'white' }}>Try AgentPM</span>
-              </div>
-              <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.6)', margin: 0 }}>
-                AI planning, agentic project management and more.
-              </p>
-            </>
-          )}
-        </a>
-      </div>
     </aside>
   );
 }

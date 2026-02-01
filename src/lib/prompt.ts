@@ -50,7 +50,7 @@ interface AssetTypeTemplate {
     negatives: string[];
 }
 
-interface BrandThemeDefinition {
+export interface BrandThemeDefinition {
     name: string;
     colors: {
         primary: string[];
@@ -74,6 +74,7 @@ export interface GenerateImageParams {
     style_variant?: StyleVariant;
     asset_type?: AssetType;
     brand_theme?: BrandTheme;
+    custom_brand_theme?: BrandThemeDefinition;
     is_asset_set?: boolean;
     provider?: ImageProvider;
 }
@@ -456,7 +457,10 @@ function getAssetTypeTemplate(assetType?: AssetType): AssetTypeTemplate {
 /**
  * Get brand theme definition, with legacy mapping support
  */
-function getBrandTheme(brandTheme?: BrandTheme | string): BrandThemeDefinition {
+function getBrandTheme(brandTheme?: BrandTheme | string, customTheme?: BrandThemeDefinition): BrandThemeDefinition {
+    // Custom theme takes priority (from active style guide)
+    if (customTheme) return customTheme;
+
     if (!brandTheme) return BRAND_THEMES.funnelists;
 
     // Check for legacy theme name
@@ -479,10 +483,10 @@ function getBrandTheme(brandTheme?: BrandTheme | string): BrandThemeDefinition {
  * Subject: 40%, Style/Asset: 25%, Brand: 20%, Details: 15%
  */
 function buildPromptParts(params: GenerateImageParams): PromptParts {
-    const { subject, additionalDetails, asset_type, brand_theme, dimension, is_asset_set } = params;
+    const { subject, additionalDetails, asset_type, brand_theme, custom_brand_theme, dimension, is_asset_set } = params;
 
     const assetTemplate = getAssetTypeTemplate(asset_type);
-    const brand = getBrandTheme(brand_theme);
+    const brand = getBrandTheme(brand_theme, custom_brand_theme);
 
     // Determine composition based on dimension or asset set mode
     let composition = assetTemplate.composition;
@@ -599,4 +603,4 @@ No text, no words, no letters, no watermarks, no busy patterns, no multiple colo
 // =============================================================================
 
 export { BRAND_THEMES, ASSET_TYPE_TEMPLATES, UNIVERSAL_NEGATIVES };
-export type { BrandThemeDefinition, AssetTypeTemplate, PromptParts };
+export type { AssetTypeTemplate, PromptParts };

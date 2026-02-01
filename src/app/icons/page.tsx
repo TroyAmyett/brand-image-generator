@@ -4,7 +4,7 @@ import { useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './page.module.css';
 import { AppHeader } from '@/ui/components/AppHeader/AppHeader';
-import { AppFooter } from '@/components/shared/AppFooter';
+
 import { Button } from '@/ui/components/Button/Button';
 import { UserMenu } from '@/components/UserMenu';
 import { CanvasToolNav } from '@/components/CanvasToolNav';
@@ -371,7 +371,7 @@ export default function IconsPage() {
               </div>
             </div>
 
-            <AppFooter />
+
           </div>
         </main>
       </div>

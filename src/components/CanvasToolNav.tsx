@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Sparkles, Package } from 'lucide-react';
+import { Sparkles, Package, PenTool } from 'lucide-react';
 
 interface CanvasTool {
   id: string;
@@ -23,6 +23,12 @@ const canvasTools: CanvasTool[] = [
     name: 'Icon Generator',
     href: '/icons',
     icon: <Package size={16} />,
+  },
+  {
+    id: 'logo-generator',
+    name: 'Logo Generator',
+    href: '/logos',
+    icon: <PenTool size={16} />,
   },
 ];
 
