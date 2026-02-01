@@ -24,6 +24,8 @@ import {
   LogoStyle,
   LOGO_TYPE_LABELS,
   LOGO_STYLE_LABELS,
+  LOGO_TYPE_DESCRIPTIONS,
+  LOGO_STYLE_DESCRIPTIONS,
 } from '@/lib/logoPrompt';
 import '@/ui/styles/index.css';
 
@@ -37,6 +39,11 @@ interface LogoVariation {
 interface StyleGuideOption {
   id: string;
   name: string;
+  colors?: {
+    primary?: { hex: string }[];
+    secondary?: { hex: string }[];
+    accent?: { hex: string }[];
+  };
 }
 
 // ---- Constants ----
@@ -156,9 +163,17 @@ export default function LogosPage() {
           const data = await res.json();
           if (data.success && data.guides) {
             setStyleGuides(
-              data.guides.map((g: { id: string; name: string }) => ({
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              data.guides.map((g: any) => ({
                 id: g.id,
                 name: g.name,
+                colors: g.colors
+                  ? {
+                      primary: g.colors.primary,
+                      secondary: g.colors.secondary,
+                      accent: g.colors.accent,
+                    }
+                  : undefined,
               }))
             );
           }
@@ -169,6 +184,17 @@ export default function LogosPage() {
     }
     fetchGuides();
   }, []);
+
+  // Auto-populate color overrides when a style guide is selected
+  useEffect(() => {
+    if (!selectedGuideId) return;
+    const guide = styleGuides.find((g) => g.id === selectedGuideId);
+    if (!guide?.colors) return;
+
+    if (guide.colors.primary?.[0]?.hex) setColorPrimary(guide.colors.primary[0].hex);
+    if (guide.colors.secondary?.[0]?.hex) setColorSecondary(guide.colors.secondary[0].hex);
+    if (guide.colors.accent?.[0]?.hex) setColorAccent(guide.colors.accent[0].hex);
+  }, [selectedGuideId, styleGuides]);
 
   // Generate logos
   const handleGenerate = useCallback(async () => {
@@ -394,6 +420,7 @@ export default function LogosPage() {
                   key={t}
                   onClick={() => setLogoType(t)}
                   style={chipStyle(logoType === t)}
+                  title={LOGO_TYPE_DESCRIPTIONS[t]}
                 >
                   {LOGO_TYPE_LABELS[t]}
                 </button>
@@ -470,6 +497,7 @@ export default function LogosPage() {
                   key={s}
                   onClick={() => setLogoStyle(s)}
                   style={chipStyle(logoStyle === s)}
+                  title={LOGO_STYLE_DESCRIPTIONS[s]}
                 >
                   {LOGO_STYLE_LABELS[s]}
                 </button>

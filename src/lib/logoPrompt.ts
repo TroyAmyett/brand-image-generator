@@ -32,6 +32,16 @@ export const LOGO_TYPE_LABELS: Record<LogoType, string> = {
   abstract: 'Abstract Mark',
 };
 
+// Tooltip descriptions for logo types
+export const LOGO_TYPE_DESCRIPTIONS: Record<LogoType, string> = {
+  icon_mark: 'A standalone symbol or icon that represents the brand without text (e.g., Apple\'s apple, Twitter\'s bird)',
+  wordmark: 'The brand name written in a distinctive, stylized typeface (e.g., Google, Coca-Cola)',
+  combination: 'An icon paired with the brand name, working together as a unified mark (e.g., Adidas, Burger King)',
+  lettermark: 'A monogram using the brand\'s initials (e.g., IBM, HBO, CNN)',
+  emblem: 'Text enclosed within a badge, seal, or crest shape (e.g., Starbucks, Harley-Davidson)',
+  abstract: 'A geometric or abstract shape that represents the brand conceptually (e.g., Pepsi, Airbnb)',
+};
+
 // Human-readable labels for logo styles
 export const LOGO_STYLE_LABELS: Record<LogoStyle, string> = {
   minimal: 'Minimal',
@@ -41,6 +51,17 @@ export const LOGO_STYLE_LABELS: Record<LogoStyle, string> = {
   corporate: 'Corporate',
   geometric: 'Geometric',
   handdrawn: 'Hand-drawn',
+};
+
+// Tooltip descriptions for logo styles
+export const LOGO_STYLE_DESCRIPTIONS: Record<LogoStyle, string> = {
+  minimal: 'Clean, simple design stripped to essentials with maximum whitespace',
+  modern: 'Contemporary and bold, following current design trends with sharp edges',
+  vintage: 'Retro-inspired with classic typography and a heritage, timeless feel',
+  playful: 'Fun and friendly with rounded shapes and vibrant, approachable energy',
+  corporate: 'Professional and trustworthy, conveying authority and refinement',
+  geometric: 'Precise, mathematical shapes with structured, grid-based symmetry',
+  handdrawn: 'Organic, artistic style with natural imperfections and sketched quality',
 };
 
 // Base templates for each logo type
