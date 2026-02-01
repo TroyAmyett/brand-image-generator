@@ -178,6 +178,39 @@
   object-fit: contain;
 }
 
+/* Custom dark tooltips */
+.chipTooltip {
+  position: relative;
+}
+
+.chipTooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 12px;
+  background: #1e1e2e;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  white-space: normal;
+  width: max-content;
+  max-width: 240px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.chipTooltip:hover::after {
+  opacity: 1;
+}
+
 /* Responsive adjustments */
 @media (max-width: 1200px) {
   .previewPanel {

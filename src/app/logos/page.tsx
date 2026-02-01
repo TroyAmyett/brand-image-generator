@@ -421,7 +421,8 @@ export default function LogosPage() {
                   key={t}
                   onClick={() => setLogoType(t)}
                   style={chipStyle(logoType === t)}
-                  title={LOGO_TYPE_DESCRIPTIONS[t]}
+                  className={styles.chipTooltip}
+                  data-tooltip={LOGO_TYPE_DESCRIPTIONS[t]}
                 >
                   {LOGO_TYPE_LABELS[t]}
                 </button>
@@ -498,7 +499,8 @@ export default function LogosPage() {
                   key={s}
                   onClick={() => setLogoStyle(s)}
                   style={chipStyle(logoStyle === s)}
-                  title={LOGO_STYLE_DESCRIPTIONS[s]}
+                  className={styles.chipTooltip}
+                  data-tooltip={LOGO_STYLE_DESCRIPTIONS[s]}
                 >
                   {LOGO_STYLE_LABELS[s]}
                 </button>
