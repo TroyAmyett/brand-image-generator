@@ -37,6 +37,7 @@
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
+  color-scheme: dark;
 }
 
 .fl-select:hover:not(:disabled) {

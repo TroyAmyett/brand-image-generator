@@ -517,13 +517,14 @@ function AddApiKeyModal({
                 color: 'white',
                 fontSize: '14px',
                 outline: 'none',
+                colorScheme: 'dark',
               }}
             >
-              <option value="" style={{ background: '#1a1a1a' }}>
+              <option value="">
                 Select a provider
               </option>
               {availableProviders.map((provider) => (
-                <option key={provider.id} value={provider.id} style={{ background: '#1a1a1a' }}>
+                <option key={provider.id} value={provider.id}>
                   {provider.name}
                 </option>
               ))}

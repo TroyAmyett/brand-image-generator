@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Sparkles, Package, PenTool } from 'lucide-react';
+import { Sparkles, Package, PenTool, User, Droplets, Wand2, Scissors } from 'lucide-react';
 
 interface CanvasTool {
   id: string;
@@ -29,6 +29,30 @@ const canvasTools: CanvasTool[] = [
     name: 'Logo Generator',
     href: '/logos',
     icon: <PenTool size={16} />,
+  },
+  {
+    id: 'character-creator',
+    name: 'Characters',
+    href: '/characters',
+    icon: <User size={16} />,
+  },
+  {
+    id: 'restyle-character',
+    name: 'Restyle',
+    href: '/restyle',
+    icon: <Wand2 size={16} />,
+  },
+  {
+    id: 'image-tools',
+    name: 'Image Tools',
+    href: '/image-tools',
+    icon: <Scissors size={16} />,
+  },
+  {
+    id: 'watermark-maker',
+    name: 'Watermarks',
+    href: '/watermarks',
+    icon: <Droplets size={16} />,
   },
 ];
 

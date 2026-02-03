@@ -23,6 +23,12 @@ export interface ImageGenerationRequest {
     style?: 'natural' | 'vivid';
     quality?: 'standard' | 'hd';
     apiKey?: string; // Optional user-provided key
+    initImage?: string; // Base64 data URI or URL of source image for img2img refinement
+    strength?: number; // 0-1, how much to change from source (lower = closer to original)
+    model?: string; // Override default model (e.g. 'gpt-image-1' for OpenAI)
+    outputFormat?: 'png' | 'jpeg' | 'webp';
+    background?: 'transparent' | 'opaque'; // gpt-image-1 only
+    count?: number; // Number of images to generate (gpt-image-1 supports n>1)
 }
 
 export interface ImageGenerationResponse {
@@ -47,12 +53,12 @@ export interface ProviderHandler {
 export const PROVIDER_CONFIGS: Record<ImageProvider, ProviderConfig> = {
     openai: {
         id: 'openai',
-        name: 'OpenAI DALL-E 3',
+        name: 'OpenAI GPT Image',
         available: true,
         requiresApiKey: true,
         envKeyName: 'OPENAI_API_KEY',
-        defaultModel: 'dall-e-3',
-        supportedSizes: ['1024x1024', '1024x1792', '1792x1024']
+        defaultModel: 'gpt-image-1',
+        supportedSizes: ['1024x1024', '1536x1024', '1024x1536']
     },
     stability: {
         id: 'stability',
@@ -113,11 +119,11 @@ export function mapToProviderSize(
         return { width: 1024, height: 1024 }; // Square
     }
 
-    // Default: return closest standard size
+    // Default / OpenAI gpt-image-1 sizes
     if (aspectRatio > 1.3) {
-        return { width: 1792, height: 1024 };
+        return { width: 1536, height: 1024 };
     } else if (aspectRatio < 0.77) {
-        return { width: 1024, height: 1792 };
+        return { width: 1024, height: 1536 };
     }
     return { width: 1024, height: 1024 };
 }

@@ -42,8 +42,17 @@ export class StabilityProvider implements ProviderHandler {
             // Build form data for v2beta API
             const formData = new FormData();
             formData.append('prompt', request.prompt);
-            formData.append('aspect_ratio', aspectRatio);
             formData.append('output_format', 'png');
+
+            // Image-to-image mode: include source image and strength
+            if (request.initImage) {
+                const imageBuffer = await this.resolveImageToBuffer(request.initImage);
+                formData.append('image', new Blob([new Uint8Array(imageBuffer)], { type: 'image/png' }), 'source.png');
+                formData.append('strength', String(request.strength ?? 0.65));
+                formData.append('mode', 'image-to-image');
+            } else {
+                formData.append('aspect_ratio', aspectRatio);
+            }
 
             // Add negative prompt if provided
             if (request.negativePrompt) {
@@ -115,6 +124,22 @@ export class StabilityProvider implements ProviderHandler {
                 provider: 'stability'
             };
         }
+    }
+
+    /**
+     * Convert a base64 data URI or URL to a Buffer for the Stability API.
+     */
+    private async resolveImageToBuffer(imageSource: string): Promise<Buffer> {
+        if (imageSource.startsWith('data:')) {
+            // Base64 data URI — extract raw bytes
+            const base64Data = imageSource.split(',')[1];
+            return Buffer.from(base64Data, 'base64');
+        }
+        // URL — fetch and convert
+        const res = await fetch(imageSource);
+        if (!res.ok) throw new Error(`Failed to fetch source image: ${res.statusText}`);
+        const arrayBuf = await res.arrayBuffer();
+        return Buffer.from(arrayBuf);
     }
 
     private getAspectRatio(width: number, height: number): string {

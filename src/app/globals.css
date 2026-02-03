@@ -59,6 +59,10 @@
   margin: 0;
 }
 
+html {
+  color-scheme: dark;
+}
+
 html,
 body {
   max-width: 100vw;
@@ -66,6 +70,18 @@ body {
   font-family: var(--font-sans);
   background-color: var(--background);
   color: var(--foreground);
+}
+
+/* Force dark chrome on all native form controls */
+select,
+input,
+textarea {
+  color-scheme: dark;
+}
+
+select option {
+  background-color: var(--color-bg-surface, #1a1a1a);
+  color: var(--color-text-primary, #ffffff);
 }
 
 a {

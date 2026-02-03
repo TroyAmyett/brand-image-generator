@@ -27,7 +27,14 @@
       "Bash(nslookup:*)",
       "Bash(timeout:*)",
       "WebFetch(domain:skillsmp.com)",
-      "WebSearch"
+      "WebSearch",
+      "mcp__playwright__browser_console_messages",
+      "Bash(cmd /c \"dir c:\\\\dev\\\\funnelists\\\\packages\\\\brand\\\\dist\")",
+      "Bash(cmd /c \"dir c:\\\\dev\\\\funnelists\\\\packages\\\\auth\\\\dist 2>&1\")",
+      "Bash(pushd:*)",
+      "Bash(popd:*)",
+      "Bash(symbol or icon that represents the brand without text\"\\).\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "WebFetch(domain:platform.stability.ai)"
     ]
   }
 }

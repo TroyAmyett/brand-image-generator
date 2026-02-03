@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { generateImage, ImageProvider, PROVIDER_CONFIGS } from '@/lib/providers';
-import { buildLogoPrompt, LogoType, LogoStyle } from '@/lib/logoPrompt';
+import { buildLogoPrompt, LogoType, LogoStyle, isIconOnlyType } from '@/lib/logoPrompt';
 import type { BrandStyleGuide } from '@/lib/brand-kit';
 import fs from 'fs';
 import path from 'path';
@@ -44,6 +44,7 @@ function extractColorsFromGuide(guide: BrandStyleGuide): {
 
 // Validation constants
 const VALID_LOGO_TYPES: LogoType[] = [
+  'icon_only',
   'icon_mark',
   'wordmark',
   'combination',
@@ -65,6 +66,17 @@ const VALID_LOGO_STYLES: LogoStyle[] = [
 const VALID_PROVIDERS: ImageProvider[] = ['openai', 'stability', 'replicate'];
 
 /**
+ * Convert a URL image to a base64 data URI.
+ * OpenAI returns temporary URLs that expire; this persists them.
+ */
+async function urlToBase64(url: string): Promise<string> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to fetch image: ${res.statusText}`);
+  const buf = Buffer.from(await res.arrayBuffer());
+  return `data:image/png;base64,${buf.toString('base64')}`;
+}
+
+/**
  * POST /api/generate-logos
  *
  * Generate logo variations using AI image providers.
@@ -79,6 +91,7 @@ const VALID_PROVIDERS: ImageProvider[] = ['openai', 'stability', 'replicate'];
  *  - provider: ImageProvider (required)
  *  - count: number (1-4, default 4)
  *  - refinement?: string - optional refinement text for iterations
+ *  - sourceImage?: string - optional source image (base64 data URI or URL) for img2img refinement
  *  - user_api_key?: string - optional user-provided API key
  */
 export async function POST(request: Request) {
@@ -95,6 +108,7 @@ export async function POST(request: Request) {
       provider,
       count = 4,
       refinement,
+      sourceImage,
       user_api_key,
     } = body;
 
@@ -220,11 +234,13 @@ export async function POST(request: Request) {
 
     // --- Generate Logo Variations ---
 
+    const iconOnly = isIconOnlyType(logoType as LogoType);
+
     console.log(
-      `[Logo API] Generating ${variationCount} logo variations - Provider: ${provider}, Type: ${logoType}, Style: ${style}, Key source: ${keySource}`
+      `[Logo API] Generating ${variationCount} logo variations - Provider: ${provider}, Type: ${logoType}, Style: ${style}, IconOnly: ${iconOnly}, Key source: ${keySource}`
     );
 
-    // Build the prompt once (each generation will produce a unique result due to model randomness)
+    // Build the prompt
     const { prompt, negativePrompt } = buildLogoPrompt({
       brandName,
       description,
@@ -237,23 +253,30 @@ export async function POST(request: Request) {
 
     console.log(`[Logo API] Prompt: ${prompt.substring(0, 200)}...`);
 
+    // Build generation params — do NOT pass style for logo generation
+    // to avoid Stability AI applying 'photographic' style_preset
+    const baseParams = {
+      provider: provider as ImageProvider,
+      prompt,
+      negativePrompt,
+      width: 1024,
+      height: 1024,
+      quality: 'hd' as const,
+      apiKey: effectiveApiKey,
+      // Pass source image for img2img when refining
+      ...(sourceImage && refinement
+        ? { initImage: sourceImage, strength: 0.65 }
+        : {}),
+    };
+
     // Generate variations in parallel
     const generationPromises = Array.from({ length: variationCount }, () =>
-      generateImage({
-        provider: provider as ImageProvider,
-        prompt,
-        negativePrompt,
-        width: 1024,
-        height: 1024,
-        quality: 'hd',
-        style: 'natural',
-        apiKey: effectiveApiKey,
-      })
+      generateImage(baseParams)
     );
 
     const results = await Promise.allSettled(generationPromises);
 
-    // Collect successful variations
+    // Collect successful variations, converting URLs to base64 for persistence
     const variations: { imageUrl: string; prompt: string }[] = [];
     const errors: string[] = [];
 
@@ -261,10 +284,19 @@ export async function POST(request: Request) {
       if (result.status === 'fulfilled') {
         const gen = result.value;
         if (gen.success && (gen.imageUrl || gen.imageBase64)) {
-          variations.push({
-            imageUrl: gen.imageUrl || gen.imageBase64 || '',
-            prompt,
-          });
+          let imageData = gen.imageBase64 || gen.imageUrl || '';
+
+          // Convert OpenAI-style URLs to base64 so they persist (URLs expire)
+          if (imageData && !imageData.startsWith('data:') && imageData.startsWith('http')) {
+            try {
+              imageData = await urlToBase64(imageData);
+            } catch (err) {
+              console.warn('[Logo API] Failed to convert URL to base64, using URL:', err);
+              imageData = gen.imageUrl || '';
+            }
+          }
+
+          variations.push({ imageUrl: imageData, prompt });
         } else if (gen.error) {
           errors.push(gen.error.message);
         }
