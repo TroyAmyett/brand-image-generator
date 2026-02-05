@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Sparkles, Package, PenTool, User, Droplets, Wand2, Scissors } from 'lucide-react';
+import { Sparkles, Package, PenTool, User, Droplets, Wand2, Scissors, Layers } from 'lucide-react';
 
 interface CanvasTool {
   id: string;
@@ -53,6 +53,12 @@ const canvasTools: CanvasTool[] = [
     name: 'Watermarks',
     href: '/watermarks',
     icon: <Droplets size={16} />,
+  },
+  {
+    id: 'showcase',
+    name: 'Showcase',
+    href: '/showcase',
+    icon: <Layers size={16} />,
   },
 ];
 

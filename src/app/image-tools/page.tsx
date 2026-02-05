@@ -143,6 +143,85 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 }
 
 /**
+ * Remove a solid-colour background via color-keying.
+ * Any pixel within `tolerance` of the target colour becomes fully transparent.
+ * Anti-aliased edges get proportional alpha so the result looks clean.
+ */
+async function removeColorBackground(
+  dataUrl: string,
+  hexColor: string,
+  tolerance: number,
+): Promise<string> {
+  const img = await loadImage(dataUrl);
+  const canvas = document.createElement('canvas');
+  canvas.width = img.width;
+  canvas.height = img.height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas not supported');
+
+  ctx.drawImage(img, 0, 0);
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imageData.data;
+
+  // Parse target colour
+  const tr = parseInt(hexColor.slice(1, 3), 16);
+  const tg = parseInt(hexColor.slice(3, 5), 16);
+  const tb = parseInt(hexColor.slice(5, 7), 16);
+
+  for (let i = 0; i < data.length; i += 4) {
+    const dr = Math.abs(data[i] - tr);
+    const dg = Math.abs(data[i + 1] - tg);
+    const db = Math.abs(data[i + 2] - tb);
+    const dist = Math.max(dr, dg, db); // channel-max distance
+
+    if (dist <= tolerance) {
+      // Fully within tolerance → transparent
+      data[i + 3] = 0;
+    } else if (dist <= tolerance + 30) {
+      // Feather zone — proportional alpha for anti-aliased edges
+      const factor = (dist - tolerance) / 30;
+      data[i + 3] = Math.round(data[i + 3] * factor);
+    }
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+  return canvas.toDataURL('image/png');
+}
+
+/**
+ * Auto-detect the background colour by sampling corner pixels.
+ */
+async function detectBgColor(dataUrl: string): Promise<string> {
+  const img = await loadImage(dataUrl);
+  const canvas = document.createElement('canvas');
+  canvas.width = img.width;
+  canvas.height = img.height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return '#ffffff';
+
+  ctx.drawImage(img, 0, 0);
+
+  // Sample 4 corners (2px inset)
+  const corners = [
+    ctx.getImageData(2, 2, 1, 1).data,
+    ctx.getImageData(img.width - 3, 2, 1, 1).data,
+    ctx.getImageData(2, img.height - 3, 1, 1).data,
+    ctx.getImageData(img.width - 3, img.height - 3, 1, 1).data,
+  ];
+
+  // Average the corner colours
+  let r = 0, g = 0, b = 0;
+  for (const c of corners) {
+    r += c[0]; g += c[1]; b += c[2];
+  }
+  r = Math.round(r / 4);
+  g = Math.round(g / 4);
+  b = Math.round(b / 4);
+
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
+/**
  * Resize an image to target dimensions using high-quality Canvas scaling.
  * Preserves transparency (outputs PNG).
  */
@@ -227,6 +306,10 @@ export default function ImageToolsPage() {
   const [workingH, setWorkingH] = useState(0);
   const [bgRemoved, setBgRemoved] = useState(false);
 
+  // Color-key background removal
+  const [bgColor, setBgColor] = useState('#ffffff');
+  const [bgTolerance, setBgTolerance] = useState(40);
+
   // Extend canvas
   const [extendPreset, setExtendPreset] = useState<string>('16:9');
   const [extendCreativity, setExtendCreativity] = useState(0.25);
@@ -282,6 +365,9 @@ export default function ImageToolsPage() {
         setOriginalH(img.height);
         setWorkingW(img.width);
         setWorkingH(img.height);
+        // Auto-detect background colour from corner pixels
+        const detected = await detectBgColor(dataUrl);
+        setBgColor(detected);
       } catch {
         // non-critical
       }
@@ -330,7 +416,7 @@ export default function ImageToolsPage() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, []);
 
-  // ---- Remove background ----
+  // ---- Remove background (color-key, client-side) ----
 
   const handleRemoveBg = useCallback(async () => {
     const source = workingImage || uploadedImage;
@@ -340,32 +426,30 @@ export default function ImageToolsPage() {
     setError(null);
 
     try {
-      const userKey = await getApiKey('stability');
-      const response = await fetch('/api/remove-background', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          image: source,
-          user_api_key: userKey || undefined,
-        }),
-      });
-
-      const data = await response.json();
-      if (data.success && data.imageBase64) {
-        setWorkingImage(data.imageBase64);
-        setBgRemoved(true);
-        setResultImage(null);
-        await updateWorkingDimensions(data.imageBase64);
-      } else {
-        setError(data.error?.message || 'Background removal failed');
-      }
+      const result = await removeColorBackground(source, bgColor, bgTolerance);
+      setWorkingImage(result);
+      setBgRemoved(true);
+      setResultImage(null);
+      await updateWorkingDimensions(result);
     } catch (err) {
       console.error('Remove bg error:', err);
       setError(err instanceof Error ? err.message : 'Background removal failed');
     } finally {
       setRemovingBg(false);
     }
-  }, [workingImage, uploadedImage, updateWorkingDimensions]);
+  }, [workingImage, uploadedImage, bgColor, bgTolerance, updateWorkingDimensions]);
+
+  // Auto-detect background colour when image is loaded
+  const handleAutoDetectBg = useCallback(async () => {
+    const source = workingImage || uploadedImage;
+    if (!source) return;
+    try {
+      const detected = await detectBgColor(source);
+      setBgColor(detected);
+    } catch {
+      // non-critical
+    }
+  }, [workingImage, uploadedImage]);
 
   // ---- Extend canvas (outpaint) ----
 
@@ -610,6 +694,72 @@ export default function ImageToolsPage() {
                 {/* Remove Background */}
                 <div className={styles.section}>
                   <div className={styles.sectionTitle}>1. Remove Background</div>
+                  <p className={styles.sectionDesc}>
+                    Color-key removal — picks the background colour and makes it transparent.
+                    Works best for logos with solid-colour backgrounds.
+                  </p>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                    <input
+                      type="color"
+                      value={bgColor}
+                      onChange={(e) => setBgColor(e.target.value)}
+                      style={{
+                        width: '32px',
+                        height: '32px',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '6px',
+                        background: 'transparent',
+                        cursor: 'pointer',
+                        padding: '2px',
+                      }}
+                    />
+                    <input
+                      type="text"
+                      value={bgColor}
+                      onChange={(e) => setBgColor(e.target.value)}
+                      className={styles.dimInput}
+                      style={{ flex: 1, textAlign: 'left' }}
+                    />
+                    <button
+                      className={styles.presetChip}
+                      onClick={() => setBgColor('#ffffff')}
+                      style={bgColor === '#ffffff' ? { borderColor: '#0ea5e9', color: '#0ea5e9' } : {}}
+                    >
+                      White
+                    </button>
+                    <button
+                      className={styles.presetChip}
+                      onClick={() => setBgColor('#000000')}
+                      style={bgColor === '#000000' ? { borderColor: '#0ea5e9', color: '#0ea5e9' } : {}}
+                    >
+                      Black
+                    </button>
+                    {hasImage && (
+                      <button
+                        className={styles.presetChip}
+                        onClick={handleAutoDetectBg}
+                        title="Auto-detect from corner pixels"
+                      >
+                        Auto
+                      </button>
+                    )}
+                  </div>
+
+                  <div style={{ marginBottom: '8px' }}>
+                    <label style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>
+                      Tolerance: {bgTolerance} (higher = more aggressive)
+                    </label>
+                    <input
+                      type="range"
+                      min={5}
+                      max={120}
+                      value={bgTolerance}
+                      onChange={(e) => setBgTolerance(Number(e.target.value))}
+                      style={{ width: '100%', accentColor: '#0ea5e9', marginTop: '4px' }}
+                    />
+                  </div>
+
                   <Button
                     variant="secondary"
                     size="sm"
@@ -622,12 +772,9 @@ export default function ImageToolsPage() {
                     {removingBg
                       ? 'Removing...'
                       : bgRemoved
-                        ? 'Background Removed ✓'
+                        ? 'Re-run with different settings'
                         : 'Remove Background'}
                   </Button>
-                  <p className={styles.sectionDesc} style={{ marginTop: '0.5rem', marginBottom: 0 }}>
-                    Uses Stability AI. Requires a Stability API key.
-                  </p>
                 </div>
 
                 {/* Extend Canvas */}
