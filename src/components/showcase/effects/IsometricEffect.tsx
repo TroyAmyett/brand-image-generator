@@ -17,6 +17,9 @@ interface IsometricEffectProps {
  */
 export function IsometricEffect({ images, settings, className = '' }: IsometricEffectProps) {
   const {
+    offsetX: posX,
+    offsetY: posY,
+    imageScale,
     rotateX,
     rotateZ,
     stackOffset,
@@ -48,10 +51,10 @@ export function IsometricEffect({ images, settings, className = '' }: IsometricE
 
   const glowRgba = hexToRgba(glowColor, glowIntensity * 0.4);
 
-  // Calculate horizontal and vertical offset based on rotation
+  // Calculate horizontal and vertical offset based on rotation for stacking
   const radZ = (rotateZ * Math.PI) / 180;
-  const offsetX = Math.cos(radZ) * stackOffset;
-  const offsetY = Math.sin(radZ) * stackOffset * 0.5; // Flatten Y offset
+  const stackX = Math.cos(radZ) * stackOffset;
+  const stackY = Math.sin(radZ) * stackOffset * 0.5; // Flatten Y offset
 
   return (
     <div
@@ -87,14 +90,14 @@ export function IsometricEffect({ images, settings, className = '' }: IsometricE
         style={{
           position: 'relative',
           transformStyle: 'preserve-3d',
-          transform: `rotateX(${rotateX}deg) rotateZ(${rotateZ}deg)`,
+          transform: `translate(${posX}px, ${posY}px) rotateX(${rotateX}deg) rotateZ(${rotateZ}deg) scale(${imageScale})`,
         }}
       >
         {images.map((image, index) => {
           // Stack from back to front
           const reverseIndex = images.length - 1 - index;
-          const xPos = reverseIndex * offsetX;
-          const yPos = reverseIndex * offsetY;
+          const xPos = reverseIndex * stackX;
+          const yPos = reverseIndex * stackY;
           const zPos = reverseIndex * 2; // Small Z for stacking
 
           return (

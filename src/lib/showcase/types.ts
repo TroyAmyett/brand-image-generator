@@ -21,9 +21,12 @@ export interface ShowcaseImage {
 
 export interface CascadeSettings {
   effect: 'cascade';
+  offsetX: number; // -500 to 500, default 0
+  offsetY: number; // -500 to 500, default 0
+  imageScale: number; // 0.3–2, default 1
   perspective: number; // 400–2400, default 1200
   rotateY: number; // -40 to 40, default -15
-  rotateX: number; // -20 to 20, default 4
+  rotateX: number; // -30 to 30, default 4
   panelSpacing: number; // 0–200, default 60
   depthOffset: number; // 0–200, default 80
   glowIntensity: number; // 0–1, default 0.4
@@ -34,7 +37,9 @@ export interface CascadeSettings {
 
 export interface SpotlightSettings {
   effect: 'spotlight';
-  scale: number; // 0.5–1.5, default 1
+  offsetX: number; // -500 to 500, default 0
+  offsetY: number; // -500 to 500, default 0
+  scale: number; // 0.3–2, default 1
   glowIntensity: number; // 0–1, default 0.5
   glowColor: string; // hex, default #0ea5e9
   vignette: boolean; // default true
@@ -44,8 +49,11 @@ export interface SpotlightSettings {
 
 export interface TiltSettings {
   effect: 'tilt';
+  offsetX: number; // -500 to 500, default 0
+  offsetY: number; // -500 to 500, default 0
+  imageScale: number; // 0.3–2, default 1
   rotateY: number; // -45 to 45, default 12
-  rotateX: number; // -20 to 20, default 0
+  rotateX: number; // -45 to 20, default 0 (more negative = tilt back)
   perspective: number; // 400–2000, default 1000
   glowIntensity: number; // 0–1, default 0.3
   glowColor: string; // hex, default #0ea5e9
@@ -55,7 +63,10 @@ export interface TiltSettings {
 
 export interface IsometricSettings {
   effect: 'isometric';
-  rotateX: number; // 40–70, default 55
+  offsetX: number; // -500 to 500, default 0
+  offsetY: number; // -500 to 500, default 0
+  imageScale: number; // 0.3–2, default 1
+  rotateX: number; // 20–70, default 55
   rotateZ: number; // -60 to 60, default -45
   stackOffset: number; // 10–100, default 40
   glowIntensity: number; // 0–1, default 0.3
@@ -134,18 +145,28 @@ export type ControlDef = SliderControlDef | ToggleControlDef | ColorControlDef;
 
 export const EFFECT_CONTROLS: Record<ShowcaseEffect, ControlDef[]> = {
   cascade: [
+    // Position & Scale
+    { type: 'slider', key: 'offsetX', label: 'Position X', min: -500, max: 500, step: 10, unit: 'px' },
+    { type: 'slider', key: 'offsetY', label: 'Position Y', min: -500, max: 500, step: 10, unit: 'px' },
+    { type: 'slider', key: 'imageScale', label: 'Image Scale', min: 0.3, max: 2, step: 0.05 },
+    // 3D Transform
     { type: 'slider', key: 'perspective', label: 'Perspective', min: 400, max: 2400, step: 50, unit: 'px' },
     { type: 'slider', key: 'rotateY', label: 'Rotate Y', min: -40, max: 40, step: 1, unit: '°' },
-    { type: 'slider', key: 'rotateX', label: 'Rotate X', min: -20, max: 20, step: 1, unit: '°' },
+    { type: 'slider', key: 'rotateX', label: 'Rotate X (−=back)', min: -30, max: 30, step: 1, unit: '°' },
     { type: 'slider', key: 'panelSpacing', label: 'Panel Spacing', min: 0, max: 200, step: 5, unit: 'px' },
     { type: 'slider', key: 'depthOffset', label: 'Depth Offset', min: 0, max: 200, step: 5, unit: 'px' },
+    // Effects
     { type: 'slider', key: 'glowIntensity', label: 'Glow Intensity', min: 0, max: 1, step: 0.05 },
     { type: 'color', key: 'glowColor', label: 'Glow Color' },
     { type: 'toggle', key: 'edgeBlur', label: 'Edge Blur' },
     { type: 'color', key: 'background', label: 'Background' },
   ],
   spotlight: [
-    { type: 'slider', key: 'scale', label: 'Scale', min: 0.5, max: 1.5, step: 0.05 },
+    // Position & Scale
+    { type: 'slider', key: 'offsetX', label: 'Position X', min: -500, max: 500, step: 10, unit: 'px' },
+    { type: 'slider', key: 'offsetY', label: 'Position Y', min: -500, max: 500, step: 10, unit: 'px' },
+    { type: 'slider', key: 'scale', label: 'Image Scale', min: 0.3, max: 2, step: 0.05 },
+    // Effects
     { type: 'slider', key: 'glowIntensity', label: 'Glow Intensity', min: 0, max: 1, step: 0.05 },
     { type: 'color', key: 'glowColor', label: 'Glow Color' },
     { type: 'toggle', key: 'vignette', label: 'Vignette' },
@@ -153,18 +174,30 @@ export const EFFECT_CONTROLS: Record<ShowcaseEffect, ControlDef[]> = {
     { type: 'color', key: 'background', label: 'Background' },
   ],
   tilt: [
+    // Position & Scale
+    { type: 'slider', key: 'offsetX', label: 'Position X', min: -500, max: 500, step: 10, unit: 'px' },
+    { type: 'slider', key: 'offsetY', label: 'Position Y', min: -500, max: 500, step: 10, unit: 'px' },
+    { type: 'slider', key: 'imageScale', label: 'Image Scale', min: 0.3, max: 2, step: 0.05 },
+    // 3D Transform
     { type: 'slider', key: 'perspective', label: 'Perspective', min: 400, max: 2000, step: 50, unit: 'px' },
     { type: 'slider', key: 'rotateY', label: 'Rotate Y', min: -45, max: 45, step: 1, unit: '°' },
-    { type: 'slider', key: 'rotateX', label: 'Rotate X', min: -20, max: 20, step: 1, unit: '°' },
+    { type: 'slider', key: 'rotateX', label: 'Rotate X (−=back)', min: -45, max: 20, step: 1, unit: '°' },
+    // Effects
     { type: 'slider', key: 'glowIntensity', label: 'Glow Intensity', min: 0, max: 1, step: 0.05 },
     { type: 'color', key: 'glowColor', label: 'Glow Color' },
     { type: 'slider', key: 'shadowIntensity', label: 'Shadow', min: 0, max: 1, step: 0.05 },
     { type: 'color', key: 'background', label: 'Background' },
   ],
   isometric: [
-    { type: 'slider', key: 'rotateX', label: 'Rotate X', min: 40, max: 70, step: 1, unit: '°' },
+    // Position & Scale
+    { type: 'slider', key: 'offsetX', label: 'Position X', min: -500, max: 500, step: 10, unit: 'px' },
+    { type: 'slider', key: 'offsetY', label: 'Position Y', min: -500, max: 500, step: 10, unit: 'px' },
+    { type: 'slider', key: 'imageScale', label: 'Image Scale', min: 0.3, max: 2, step: 0.05 },
+    // 3D Transform
+    { type: 'slider', key: 'rotateX', label: 'Rotate X', min: 20, max: 70, step: 1, unit: '°' },
     { type: 'slider', key: 'rotateZ', label: 'Rotate Z', min: -60, max: 60, step: 1, unit: '°' },
     { type: 'slider', key: 'stackOffset', label: 'Stack Offset', min: 10, max: 100, step: 5, unit: 'px' },
+    // Effects
     { type: 'slider', key: 'glowIntensity', label: 'Glow Intensity', min: 0, max: 1, step: 0.05 },
     { type: 'color', key: 'glowColor', label: 'Glow Color' },
     { type: 'slider', key: 'shadowIntensity', label: 'Shadow', min: 0, max: 1, step: 0.05 },

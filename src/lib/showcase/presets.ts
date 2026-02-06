@@ -12,6 +12,9 @@ import type { ShowcasePreset, CascadeSettings, SpotlightSettings, TiltSettings, 
 
 export const DEFAULT_CASCADE: CascadeSettings = {
   effect: 'cascade',
+  offsetX: 0,
+  offsetY: 0,
+  imageScale: 1,
   perspective: 1200,
   rotateY: -15,
   rotateX: 4,
@@ -25,6 +28,8 @@ export const DEFAULT_CASCADE: CascadeSettings = {
 
 export const DEFAULT_SPOTLIGHT: SpotlightSettings = {
   effect: 'spotlight',
+  offsetX: 0,
+  offsetY: 0,
   scale: 1.0,
   glowIntensity: 0.5,
   glowColor: '#0ea5e9',
@@ -35,6 +40,9 @@ export const DEFAULT_SPOTLIGHT: SpotlightSettings = {
 
 export const DEFAULT_TILT: TiltSettings = {
   effect: 'tilt',
+  offsetX: 0,
+  offsetY: 0,
+  imageScale: 1,
   rotateY: 12,
   rotateX: 0,
   perspective: 1000,
@@ -46,6 +54,9 @@ export const DEFAULT_TILT: TiltSettings = {
 
 export const DEFAULT_ISOMETRIC: IsometricSettings = {
   effect: 'isometric',
+  offsetX: 0,
+  offsetY: 0,
+  imageScale: 1,
   rotateX: 55,
   rotateZ: -45,
   stackOffset: 40,

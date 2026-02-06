@@ -17,6 +17,9 @@ interface CascadeEffectProps {
  */
 export function CascadeEffect({ images, settings, className = '' }: CascadeEffectProps) {
   const {
+    offsetX,
+    offsetY,
+    imageScale,
     perspective,
     rotateY,
     rotateX,
@@ -120,6 +123,7 @@ export function CascadeEffect({ images, settings, className = '' }: CascadeEffec
         style={{
           perspective: `${perspective}px`,
           perspectiveOrigin: '50% 50%',
+          transform: `translate(${offsetX}px, ${offsetY}px)`,
         }}
       >
         {/* Panel group with rotation */}
@@ -127,7 +131,7 @@ export function CascadeEffect({ images, settings, className = '' }: CascadeEffec
           style={{
             display: 'flex',
             gap: `${panelSpacing}px`,
-            transform: `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`,
+            transform: `rotateY(${rotateY}deg) rotateX(${rotateX}deg) scale(${imageScale})`,
             transformStyle: 'preserve-3d',
           }}
         >

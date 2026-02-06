@@ -17,6 +17,9 @@ interface TiltEffectProps {
  */
 export function TiltEffect({ images, settings, className = '' }: TiltEffectProps) {
   const {
+    offsetX,
+    offsetY,
+    imageScale,
     rotateY,
     rotateX,
     perspective,
@@ -88,11 +91,12 @@ export function TiltEffect({ images, settings, className = '' }: TiltEffectProps
         style={{
           perspective: `${perspective}px`,
           perspectiveOrigin: '50% 50%',
+          transform: `translate(${offsetX}px, ${offsetY}px)`,
         }}
       >
         <div
           style={{
-            transform: `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`,
+            transform: `rotateY(${rotateY}deg) rotateX(${rotateX}deg) scale(${imageScale})`,
             transformStyle: 'preserve-3d',
             borderRadius: '12px',
             overflow: 'hidden',

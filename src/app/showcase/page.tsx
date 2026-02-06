@@ -70,6 +70,7 @@ export default function ShowcasePage() {
   // Export
   const [exporting, setExporting] = useState(false);
   const [showCSSModal, setShowCSSModal] = useState(false);
+  const [exportScale, setExportScale] = useState<1 | 2 | 4>(2);
   const previewRef = useRef<HTMLDivElement>(null);
 
   // ─────────────────────────────────────────────────────────────
@@ -193,11 +194,13 @@ export default function ShowcasePage() {
 
     setExporting(true);
     try {
-      await downloadShowcase(previewRef.current, `showcase-${Date.now()}.png`, {
-        width: 1920,
-        height: 1080,
+      const baseWidth = 1920;
+      const baseHeight = 1080;
+      await downloadShowcase(previewRef.current, `showcase-${exportScale}x-${Date.now()}.png`, {
+        width: baseWidth,
+        height: baseHeight,
         format: 'png',
-        scale: 2,
+        scale: exportScale,
       });
     } catch (error) {
       console.error('Export failed:', error);
@@ -205,18 +208,20 @@ export default function ShowcasePage() {
     } finally {
       setExporting(false);
     }
-  }, [images.length]);
+  }, [images.length, exportScale]);
 
   const handleExportWebP = useCallback(async () => {
     if (!previewRef.current || images.length === 0) return;
 
     setExporting(true);
     try {
-      await downloadShowcase(previewRef.current, `showcase-${Date.now()}.webp`, {
-        width: 1920,
-        height: 1080,
+      const baseWidth = 1920;
+      const baseHeight = 1080;
+      await downloadShowcase(previewRef.current, `showcase-${exportScale}x-${Date.now()}.webp`, {
+        width: baseWidth,
+        height: baseHeight,
         format: 'webp',
-        scale: 2,
+        scale: exportScale,
         quality: 0.9,
       });
     } catch (error) {
@@ -225,7 +230,7 @@ export default function ShowcasePage() {
     } finally {
       setExporting(false);
     }
-  }, [images.length]);
+  }, [images.length, exportScale]);
 
   // ─────────────────────────────────────────────────────────────
   // Render effect preview
@@ -441,6 +446,26 @@ export default function ShowcasePage() {
           {/* Export */}
           <div className={styles.sidebarSection}>
             <div className={styles.sectionTitle}>Export</div>
+
+            {/* Scale selector */}
+            <div className={styles.controlGroup} style={{ marginBottom: '12px' }}>
+              <div className={styles.controlLabel}>
+                <span>Resolution</span>
+                <span className={styles.controlValue}>{1920 * exportScale} × {1080 * exportScale}</span>
+              </div>
+              <div className={styles.presetList}>
+                {([1, 2, 4] as const).map((scale) => (
+                  <button
+                    key={scale}
+                    className={`${styles.presetChip} ${exportScale === scale ? styles.active : ''}`}
+                    onClick={() => setExportScale(scale)}
+                  >
+                    {scale}× ({1920 * scale}px)
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className={styles.exportButtons}>
               <button
                 className={`${styles.exportButton} ${styles.primary}`}
@@ -448,7 +473,7 @@ export default function ShowcasePage() {
                 disabled={images.length === 0 || exporting}
               >
                 <Download size={16} />
-                {exporting ? 'Exporting...' : 'Download PNG'}
+                {exporting ? 'Exporting...' : `Download PNG (${exportScale}×)`}
               </button>
               <button
                 className={styles.exportButton}
@@ -456,7 +481,7 @@ export default function ShowcasePage() {
                 disabled={images.length === 0 || exporting}
               >
                 <Download size={16} />
-                Download WebP
+                Download WebP ({exportScale}×)
               </button>
               <button
                 className={styles.exportButton}
@@ -473,7 +498,9 @@ export default function ShowcasePage() {
         <main className={styles.previewArea}>
           <div className={styles.previewHeader}>
             <span className={styles.previewTitle}>Preview</span>
-            <span className={styles.previewDimensions}>1920 × 1080</span>
+            <span className={styles.previewDimensions}>
+              Export: {1920 * exportScale} × {1080 * exportScale}px ({exportScale}×)
+            </span>
           </div>
           <div className={styles.previewContainer}>
             <div

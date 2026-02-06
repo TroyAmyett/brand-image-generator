@@ -17,6 +17,8 @@ interface SpotlightEffectProps {
  */
 export function SpotlightEffect({ images, settings, className = '' }: SpotlightEffectProps) {
   const {
+    offsetX,
+    offsetY,
     scale,
     glowIntensity,
     glowColor,
@@ -82,7 +84,7 @@ export function SpotlightEffect({ images, settings, className = '' }: SpotlightE
       <div
         style={{
           position: 'relative',
-          transform: `scale(${scale})`,
+          transform: `translate(${offsetX}px, ${offsetY}px) scale(${scale})`,
           animation: floatAnimation ? 'spotlight-float 4s ease-in-out infinite' : 'none',
           zIndex: 1,
         }}
@@ -130,8 +132,8 @@ export function SpotlightEffect({ images, settings, className = '' }: SpotlightE
       {/* Float animation keyframes */}
       <style>{`
         @keyframes spotlight-float {
-          0%, 100% { transform: scale(${scale}) translateY(0); }
-          50% { transform: scale(${scale}) translateY(-12px); }
+          0%, 100% { transform: translate(${offsetX}px, ${offsetY}px) scale(${scale}); }
+          50% { transform: translate(${offsetX}px, ${offsetY - 12}px) scale(${scale}); }
         }
       `}</style>
     </div>
