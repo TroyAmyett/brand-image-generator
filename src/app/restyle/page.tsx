@@ -17,7 +17,7 @@ import {
   Wand2,
   Download,
 } from 'lucide-react';
-import { SETTING_OPTIONS, EXPRESSION_OPTIONS, ASPECT_RATIO_OPTIONS } from '@/lib/characterPrompt';
+import { SETTING_OPTIONS, ASPECT_RATIO_OPTIONS } from '@/lib/characterPrompt';
 import type { AspectRatio } from '@/lib/characterPrompt';
 import { getApiKey } from '@/lib/apiKeyStorage';
 import '@/ui/styles/index.css';
@@ -78,89 +78,87 @@ interface SavedCharacter {
 }
 
 // ---------------------------------------------------------------------------
-// Restyle prompt builder
+// Get setting description for background generation
 // ---------------------------------------------------------------------------
 
-interface RestylePromptResult {
-  prompt: string;
-  negativePrompt: string;
+function getSettingDescription(setting: string, customSettingDescription: string): string {
+  const settingOption = SETTING_OPTIONS.find((s) => s.id === setting);
+  if (setting === 'custom' && customSettingDescription) {
+    return customSettingDescription;
+  } else if (settingOption?.promptFragment) {
+    return settingOption.promptFragment;
+  } else {
+    return 'Professional studio background with soft gradient backdrop';
+  }
 }
 
-function buildRestylePrompt(params: {
-  setting: string;
-  expression: string;
-  outfitDescription: string;
-  brandAccentColor: string;
-  customSettingDescription: string;
-  aspectRatio: AspectRatio;
-}): RestylePromptResult {
-  const { setting, expression, outfitDescription, brandAccentColor, customSettingDescription, aspectRatio } = params;
+// ---------------------------------------------------------------------------
+// Composite person onto background using Canvas
+// ---------------------------------------------------------------------------
 
-  // Setting / background
-  const settingOption = SETTING_OPTIONS.find((s) => s.id === setting);
-  let settingFragment: string;
-  if (setting === 'custom' && customSettingDescription) {
-    settingFragment = customSettingDescription;
-  } else if (settingOption?.promptFragment) {
-    settingFragment = settingOption.promptFragment;
-  } else {
-    settingFragment = 'Professional studio background with soft gradient backdrop';
-  }
+function compositeImages(
+  personWithTransparentBg: string,
+  background: string
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const bgImg = new Image();
+    const personImg = new Image();
+    let bgLoaded = false;
+    let personLoaded = false;
 
-  // Expression — "same" means don't override, let the reference dictate
-  const expressionOption = EXPRESSION_OPTIONS.find((e) => e.id === expression);
-  const expressionFragment =
-    expression === 'same'
-      ? 'same facial expression as the reference photo'
-      : expressionOption?.promptFragment || 'same facial expression as the reference photo';
+    const tryComposite = () => {
+      if (!bgLoaded || !personLoaded) return;
 
-  // Outfit — only mention if explicitly provided
-  const outfitLine = outfitDescription ? `Wearing ${outfitDescription}.` : '';
+      // Use background dimensions as the canvas size
+      const canvas = document.createElement('canvas');
+      canvas.width = bgImg.width;
+      canvas.height = bgImg.height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Canvas not supported'));
+        return;
+      }
 
-  // Aspect ratio hint for composition — keep it minimal so the model doesn't repose
-  let compositionHint: string;
-  if (aspectRatio === '16:9') {
-    compositionHint = 'Wide landscape composition with extra environment visible on both sides of the subject.';
-  } else if (aspectRatio === '1:1') {
-    compositionHint = 'Square composition.';
-  } else {
-    compositionHint = 'Vertical portrait composition.';
-  }
+      // Draw background
+      ctx.drawImage(bgImg, 0, 0);
 
-  const parts = [
-    `CRITICAL: Preserve the EXACT same pose, head angle, head tilt, body position, and camera angle as the reference photo. Do NOT change the subject's pose or orientation in any way.`,
-    `This exact person in their exact current pose, placed in a new setting: ${settingFragment}.`,
-    `${expressionFragment}.`,
-    outfitLine,
-    `Subtle ${brandAccentColor} accent lighting. Photorealistic, sharp focus, high resolution.`,
-    compositionHint,
-    `NO text anywhere.`,
-  ].filter(Boolean);
+      // Calculate person placement - center horizontally, align to bottom
+      // Scale person to fit nicely in the frame
+      const personAspect = personImg.width / personImg.height;
+      let personHeight = canvas.height * 0.9; // Person takes up ~90% of height
+      let personWidth = personHeight * personAspect;
 
-  const negativePrompt = [
-    'different pose',
-    'changed head angle',
-    'altered head tilt',
-    'different body position',
-    'different camera angle',
-    'reposed',
-    'mirrored',
-    'flipped',
-    'text',
-    'words',
-    'watermark',
-    'logo',
-    'illustration',
-    'cartoon',
-    'low quality',
-    'blurry',
-    'deformed',
-    'extra fingers',
-    'mutated hands',
-    'multiple people',
-  ].join(', ');
+      // If person is too wide, scale down
+      if (personWidth > canvas.width * 0.8) {
+        personWidth = canvas.width * 0.8;
+        personHeight = personWidth / personAspect;
+      }
 
-  return { prompt: parts.join('\n'), negativePrompt };
+      // Center horizontally, align to bottom
+      const personX = (canvas.width - personWidth) / 2;
+      const personY = canvas.height - personHeight;
+
+      // Draw person
+      ctx.drawImage(personImg, personX, personY, personWidth, personHeight);
+
+      resolve(canvas.toDataURL('image/png'));
+    };
+
+    bgImg.onload = () => {
+      bgLoaded = true;
+      tryComposite();
+    };
+    bgImg.onerror = () => reject(new Error('Failed to load background image'));
+
+    personImg.onload = () => {
+      personLoaded = true;
+      tryComposite();
+    };
+    personImg.onerror = () => reject(new Error('Failed to load person image'));
+
+    bgImg.src = background;
+    personImg.src = personWithTransparentBg;
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -230,8 +228,6 @@ export default function RestylePage() {
 
   // Settings
   const [setting, setSetting] = useState('studio');
-  const [expression, setExpression] = useState('same');
-  const [outfitDescription, setOutfitDescription] = useState('');
   const [brandAccentColor, setBrandAccentColor] = useState('#0ea5e9');
   const [customSettingDescription, setCustomSettingDescription] = useState('');
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>('16:9');
@@ -246,6 +242,7 @@ export default function RestylePage() {
 
   // UI state
   const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
@@ -317,55 +314,87 @@ export default function RestylePage() {
     input.click();
   };
 
-  // Generate restyled versions
+  // Generate restyled versions using composite approach
   const handleGenerate = async () => {
     if (!referenceImage) return;
 
     setLoading(true);
     setError(null);
+    setLoadingStep('Removing background...');
 
     try {
-      const userKey = await getApiKey('replicate');
-      const { prompt, negativePrompt } = buildRestylePrompt({
-        setting,
-        expression,
-        outfitDescription: outfitDescription.trim(),
-        brandAccentColor,
-        customSettingDescription: customSettingDescription.trim(),
-        aspectRatio,
-      });
+      const stabilityKey = await getApiKey('stability');
+      const openaiKey = await getApiKey('openai');
+      const settingDescription = getSettingDescription(setting, customSettingDescription.trim());
 
-      const response = await fetch('/api/character-variations', {
+      // Step 1: Remove background from reference image
+      const removeBgResponse = await fetch('/api/remove-background', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          subject: referenceImage,
-          prompt,
-          negative_prompt: negativePrompt,
-          number_of_outputs: numberOfOutputs,
-          output_format: 'png',
-          output_quality: 95,
-          user_api_key: userKey || undefined,
+          image: referenceImage,
+          user_api_key: stabilityKey || undefined,
         }),
       });
 
-      const data = await response.json();
+      const removeBgData = await removeBgResponse.json();
 
-      if (data.success && data.variations) {
-        // Post-process: crop all results to the selected aspect ratio
-        const cropped = await Promise.all(
-          (data.variations as string[]).map((v: string) => cropToAspectRatio(v, aspectRatio))
-        );
-        setResults(cropped);
-        setSelectedIndex(0);
-      } else {
-        setError(data.error?.message || 'Failed to generate restyled images');
+      if (!removeBgData.success || !removeBgData.imageBase64) {
+        throw new Error(removeBgData.error?.message || 'Failed to remove background');
       }
+
+      const personTransparent = removeBgData.imageBase64;
+
+      // Step 2: Generate background images (one per output requested)
+      setLoadingStep(`Generating ${numberOfOutputs} background(s)...`);
+
+      const backgroundPromises = Array.from({ length: numberOfOutputs }, () =>
+        fetch('/api/generate-background', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            setting: settingDescription,
+            aspectRatio,
+            accentColor: brandAccentColor,
+            user_api_key: openaiKey || undefined,
+          }),
+        }).then(res => res.json())
+      );
+
+      const backgroundResults = await Promise.all(backgroundPromises);
+
+      // Filter successful backgrounds
+      const backgrounds = backgroundResults
+        .filter(r => r.success && r.background)
+        .map(r => r.background as string);
+
+      if (backgrounds.length === 0) {
+        const firstError = backgroundResults.find(r => !r.success);
+        throw new Error(firstError?.error?.message || 'Failed to generate backgrounds');
+      }
+
+      // Step 3: Composite person onto each background
+      setLoadingStep('Compositing images...');
+
+      const compositePromises = backgrounds.map(bg =>
+        compositeImages(personTransparent, bg)
+      );
+
+      const composited = await Promise.all(compositePromises);
+
+      // Crop to aspect ratio
+      const cropped = await Promise.all(
+        composited.map(c => cropToAspectRatio(c, aspectRatio))
+      );
+
+      setResults(cropped);
+      setSelectedIndex(0);
     } catch (err) {
       console.error('Restyle generation error:', err);
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
+      setLoadingStep('');
     }
   };
 
@@ -495,28 +524,6 @@ export default function RestylePage() {
             )}
           </div>
 
-          {/* Expression */}
-          <div style={sectionGap}>
-            <div style={labelStyle}>Expression</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-              <button
-                onClick={() => setExpression('same')}
-                style={chipStyle(expression === 'same')}
-              >
-                Same as Reference
-              </button>
-              {EXPRESSION_OPTIONS.map((exp) => (
-                <button
-                  key={exp.id}
-                  onClick={() => setExpression(exp.id)}
-                  style={chipStyle(expression === exp.id)}
-                >
-                  {exp.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Aspect Ratio */}
           <div style={sectionGap}>
             <div style={labelStyle}>Aspect Ratio</div>
@@ -532,18 +539,6 @@ export default function RestylePage() {
                 </button>
               ))}
             </div>
-          </div>
-
-          {/* Outfit */}
-          <div style={sectionGap}>
-            <div style={labelStyle}>Outfit</div>
-            <textarea
-              placeholder="Describe the outfit: e.g. dark blazer with subtle cyan accent stitching..."
-              value={outfitDescription}
-              onChange={(e) => setOutfitDescription(e.target.value)}
-              rows={2}
-              style={{ ...inputStyle, resize: 'vertical' as const, minHeight: '56px' }}
-            />
           </div>
 
           {/* Brand Accent Color */}
@@ -609,7 +604,7 @@ export default function RestylePage() {
               </p>
             )}
             <p style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.4)', textAlign: 'center', marginTop: '8px' }}>
-              Uses consistent-character on Replicate. Requires a Replicate API key.
+              Removes background, generates new setting, then composites. Uses Stability AI + OpenAI.
             </p>
           </div>
         </aside>
@@ -622,8 +617,13 @@ export default function RestylePage() {
               <span className={styles.loadingText}>
                 Restyling character{referenceName ? ` "${referenceName}"` : ''}...
               </span>
+              {loadingStep && (
+                <p style={{ fontSize: '13px', color: '#0ea5e9', marginTop: '8px' }}>
+                  {loadingStep}
+                </p>
+              )}
               <p style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.4)', marginTop: '4px' }}>
-                This may take up to 60 seconds
+                This may take 30-60 seconds
               </p>
             </div>
           ) : results.length > 0 ? (
