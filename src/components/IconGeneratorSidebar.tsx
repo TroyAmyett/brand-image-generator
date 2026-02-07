@@ -16,8 +16,8 @@ interface IconGeneratorSidebarProps {
   onModeChange: (mode: 'auto' | 'square') => void;
   padding: number;
   onPaddingChange: (padding: number) => void;
-  background: 'transparent' | 'white';
-  onBackgroundChange: (bg: 'transparent' | 'white') => void;
+  background: 'transparent' | 'white' | 'black';
+  onBackgroundChange: (bg: 'transparent' | 'white' | 'black') => void;
   onGenerate: () => void;
   canGenerate: boolean;
   isLoading: boolean;
@@ -249,16 +249,16 @@ export function IconGeneratorSidebar({
           <Settings size={14} />
           Background
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <button
             onClick={() => onBackgroundChange('transparent')}
             style={{
-              flex: 1,
+              flex: '1 1 calc(50% - 4px)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '8px',
-              padding: '10px 12px',
+              gap: '6px',
+              padding: '10px 8px',
               borderRadius: '8px',
               border:
                 background === 'transparent'
@@ -269,7 +269,7 @@ export function IconGeneratorSidebar({
                   ? 'rgba(14, 165, 233, 0.1)'
                   : 'rgba(255, 255, 255, 0.03)',
               color: background === 'transparent' ? '#0ea5e9' : 'rgba(255, 255, 255, 0.7)',
-              fontSize: '13px',
+              fontSize: '12px',
               fontWeight: 500,
               cursor: 'pointer',
               transition: 'all 0.15s ease',
@@ -277,8 +277,8 @@ export function IconGeneratorSidebar({
           >
             <span
               style={{
-                width: '16px',
-                height: '16px',
+                width: '14px',
+                height: '14px',
                 borderRadius: '3px',
                 border: '1px solid rgba(255, 255, 255, 0.2)',
                 background: `linear-gradient(45deg, #666 25%, transparent 25%),
@@ -287,6 +287,7 @@ export function IconGeneratorSidebar({
                   linear-gradient(-45deg, transparent 75%, #666 75%)`,
                 backgroundSize: '8px 8px',
                 backgroundPosition: '0 0, 0 4px, 4px -4px, -4px 0px',
+                flexShrink: 0,
               }}
             />
             Transparent
@@ -294,19 +295,19 @@ export function IconGeneratorSidebar({
           <button
             onClick={() => onBackgroundChange('white')}
             style={{
-              flex: 1,
+              flex: '1 1 calc(50% - 4px)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '8px',
-              padding: '10px 12px',
+              gap: '6px',
+              padding: '10px 8px',
               borderRadius: '8px',
               border:
                 background === 'white' ? '1px solid #0ea5e9' : '1px solid rgba(255, 255, 255, 0.1)',
               background:
                 background === 'white' ? 'rgba(14, 165, 233, 0.1)' : 'rgba(255, 255, 255, 0.03)',
               color: background === 'white' ? '#0ea5e9' : 'rgba(255, 255, 255, 0.7)',
-              fontSize: '13px',
+              fontSize: '12px',
               fontWeight: 500,
               cursor: 'pointer',
               transition: 'all 0.15s ease',
@@ -314,14 +315,48 @@ export function IconGeneratorSidebar({
           >
             <span
               style={{
-                width: '16px',
-                height: '16px',
+                width: '14px',
+                height: '14px',
                 borderRadius: '3px',
                 border: '1px solid rgba(255, 255, 255, 0.2)',
                 background: '#fff',
+                flexShrink: 0,
               }}
             />
             White
+          </button>
+          <button
+            onClick={() => onBackgroundChange('black')}
+            style={{
+              flex: '1 1 100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              padding: '10px 8px',
+              borderRadius: '8px',
+              border:
+                background === 'black' ? '1px solid #0ea5e9' : '1px solid rgba(255, 255, 255, 0.1)',
+              background:
+                background === 'black' ? 'rgba(14, 165, 233, 0.1)' : 'rgba(255, 255, 255, 0.03)',
+              color: background === 'black' ? '#0ea5e9' : 'rgba(255, 255, 255, 0.7)',
+              fontSize: '12px',
+              fontWeight: 500,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <span
+              style={{
+                width: '14px',
+                height: '14px',
+                borderRadius: '3px',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                background: '#000',
+                flexShrink: 0,
+              }}
+            />
+            Black
           </button>
         </div>
       </div>

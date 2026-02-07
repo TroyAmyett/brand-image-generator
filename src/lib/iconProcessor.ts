@@ -190,6 +190,8 @@ export async function addPadding(
     background = { r: 0, g: 0, b: 0, alpha: 0 };
   } else if (backgroundColor === 'white') {
     background = { r: 255, g: 255, b: 255, alpha: 1 };
+  } else if (backgroundColor === 'black') {
+    background = { r: 0, g: 0, b: 0, alpha: 1 };
   } else if (backgroundColor.startsWith('#')) {
     const hex = backgroundColor.slice(1);
     background = {
@@ -252,6 +254,8 @@ async function generateSingleIcon(
           ? { r: 0, g: 0, b: 0, alpha: 0 }
           : backgroundColor === 'white'
           ? { r: 255, g: 255, b: 255, alpha: 1 }
+          : backgroundColor === 'black'
+          ? { r: 0, g: 0, b: 0, alpha: 1 }
           : { r: 0, g: 0, b: 0, alpha: 0 },
     })
     .png()
@@ -338,6 +342,8 @@ export async function generateIconSet(
           ? { r: 0, g: 0, b: 0, alpha: 0 }
           : background === 'white'
           ? { r: 255, g: 255, b: 255, alpha: 1 }
+          : background === 'black'
+          ? { r: 0, g: 0, b: 0, alpha: 1 }
           : { r: 0, g: 0, b: 0, alpha: 0 },
     })
     .png()

@@ -50,7 +50,7 @@ export default function IconsPage() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [mode, setMode] = useState<'auto' | 'square'>('auto');
   const [padding, setPadding] = useState(10);
-  const [background, setBackground] = useState<'transparent' | 'white'>('transparent');
+  const [background, setBackground] = useState<'transparent' | 'white' | 'black'>('transparent');
   const [isDragging, setIsDragging] = useState(false);
 
   // Generation state

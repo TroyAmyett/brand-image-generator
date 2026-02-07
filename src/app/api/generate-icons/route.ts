@@ -116,7 +116,7 @@ export async function POST(request: Request) {
     }
 
     // Validate background
-    const validBackgrounds = ['transparent', 'white'];
+    const validBackgrounds = ['transparent', 'white', 'black'];
     const isHexColor = /^#[0-9A-Fa-f]{6}$/.test(background);
     if (!validBackgrounds.includes(background) && !isHexColor) {
       return NextResponse.json(
@@ -124,7 +124,7 @@ export async function POST(request: Request) {
           success: false,
           error: {
             code: 'INVALID_BACKGROUND',
-            message: 'Background must be "transparent", "white", or a hex color (#RRGGBB).',
+            message: 'Background must be "transparent", "white", "black", or a hex color (#RRGGBB).',
           },
         },
         { status: 400 }
