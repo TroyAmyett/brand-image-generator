@@ -12,8 +12,8 @@ const AGENTPM_URL = process.env.NEXT_PUBLIC_AGENTPM_URL || 'https://agentpm.funn
 type SidebarTab = 'generate' | 'settings';
 
 interface IconGeneratorSidebarProps {
-  mode: 'auto' | 'square';
-  onModeChange: (mode: 'auto' | 'square') => void;
+  mode: 'auto' | 'square' | 'manual';
+  onModeChange: (mode: 'auto' | 'square' | 'manual') => void;
   padding: number;
   onPaddingChange: (padding: number) => void;
   background: 'transparent' | 'white' | 'black';
@@ -131,17 +131,17 @@ export function IconGeneratorSidebar({
           <Wand2 size={14} />
           Detection Mode
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <button
             onClick={() => onModeChange('auto')}
             style={{
-              flex: 1,
-              padding: '10px 12px',
+              flex: '1 1 calc(50% - 4px)',
+              padding: '10px 8px',
               borderRadius: '8px',
               border: mode === 'auto' ? '1px solid #0ea5e9' : '1px solid rgba(255, 255, 255, 0.1)',
               background: mode === 'auto' ? 'rgba(14, 165, 233, 0.1)' : 'rgba(255, 255, 255, 0.03)',
               color: mode === 'auto' ? '#0ea5e9' : 'rgba(255, 255, 255, 0.7)',
-              fontSize: '13px',
+              fontSize: '12px',
               fontWeight: 500,
               cursor: 'pointer',
               transition: 'all 0.15s ease',
@@ -150,21 +150,38 @@ export function IconGeneratorSidebar({
             Auto-detect
           </button>
           <button
-            onClick={() => onModeChange('square')}
+            onClick={() => onModeChange('manual')}
             style={{
-              flex: 1,
-              padding: '10px 12px',
+              flex: '1 1 calc(50% - 4px)',
+              padding: '10px 8px',
               borderRadius: '8px',
-              border: mode === 'square' ? '1px solid #0ea5e9' : '1px solid rgba(255, 255, 255, 0.1)',
-              background: mode === 'square' ? 'rgba(14, 165, 233, 0.1)' : 'rgba(255, 255, 255, 0.03)',
-              color: mode === 'square' ? '#0ea5e9' : 'rgba(255, 255, 255, 0.7)',
-              fontSize: '13px',
+              border: mode === 'manual' ? '1px solid #0ea5e9' : '1px solid rgba(255, 255, 255, 0.1)',
+              background: mode === 'manual' ? 'rgba(14, 165, 233, 0.1)' : 'rgba(255, 255, 255, 0.03)',
+              color: mode === 'manual' ? '#0ea5e9' : 'rgba(255, 255, 255, 0.7)',
+              fontSize: '12px',
               fontWeight: 500,
               cursor: 'pointer',
               transition: 'all 0.15s ease',
             }}
           >
-            Already Square
+            Manual Crop
+          </button>
+          <button
+            onClick={() => onModeChange('square')}
+            style={{
+              flex: '1 1 100%',
+              padding: '10px 8px',
+              borderRadius: '8px',
+              border: mode === 'square' ? '1px solid #0ea5e9' : '1px solid rgba(255, 255, 255, 0.1)',
+              background: mode === 'square' ? 'rgba(14, 165, 233, 0.1)' : 'rgba(255, 255, 255, 0.03)',
+              color: mode === 'square' ? '#0ea5e9' : 'rgba(255, 255, 255, 0.7)',
+              fontSize: '12px',
+              fontWeight: 500,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            Use Full Image
           </button>
         </div>
         <p
@@ -177,7 +194,9 @@ export function IconGeneratorSidebar({
         >
           {mode === 'auto'
             ? 'AI will detect and extract the icon from your logo'
-            : 'Use the entire image as-is'}
+            : mode === 'manual'
+            ? 'Draw a selection box around the icon area'
+            : 'Use the entire image as-is (must be square)'}
         </p>
         {mode === 'auto' && !hasAnthropicKey && !hasPlatformKey && !isCheckingKey && (
           <div

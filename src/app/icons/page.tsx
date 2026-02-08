@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './page.module.css';
 import { AppHeader } from '@/ui/components/AppHeader/AppHeader';
@@ -16,8 +16,16 @@ import {
   X,
   Image as ImageIcon,
   Package,
+  Crop,
 } from 'lucide-react';
 import '@/ui/styles/index.css';
+
+interface CropBounds {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
 
 interface GeneratedIcon {
   dataUrl: string;
@@ -48,10 +56,17 @@ export default function IconsPage() {
 
   // Form state
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [mode, setMode] = useState<'auto' | 'square'>('auto');
+  const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null);
+  const [mode, setMode] = useState<'auto' | 'square' | 'manual'>('auto');
   const [padding, setPadding] = useState(10);
   const [background, setBackground] = useState<'transparent' | 'white' | 'black'>('transparent');
   const [isDragging, setIsDragging] = useState(false);
+
+  // Crop selection state
+  const [cropBounds, setCropBounds] = useState<CropBounds | null>(null);
+  const [isCropping, setIsCropping] = useState(false);
+  const [cropStart, setCropStart] = useState<{ x: number; y: number } | null>(null);
+  const cropContainerRef = useRef<HTMLDivElement>(null);
 
   // Generation state
   const [loading, setLoading] = useState(false);
@@ -59,6 +74,75 @@ export default function IconsPage() {
   const [result, setResult] = useState<IconGenerationResult | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Load image dimensions when image is uploaded
+  useEffect(() => {
+    if (uploadedImage) {
+      const img = new Image();
+      img.onload = () => {
+        setImageSize({ width: img.width, height: img.height });
+        // Reset crop when new image is uploaded
+        setCropBounds(null);
+      };
+      img.src = uploadedImage;
+    } else {
+      setImageSize(null);
+      setCropBounds(null);
+    }
+  }, [uploadedImage]);
+
+  // Handle crop selection
+  const handleCropMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (mode !== 'manual' || !cropContainerRef.current) return;
+
+    const rect = cropContainerRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    setIsCropping(true);
+    setCropStart({ x, y });
+    setCropBounds({ x, y, width: 0, height: 0 });
+  }, [mode]);
+
+  const handleCropMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isCropping || !cropStart || !cropContainerRef.current) return;
+
+    const rect = cropContainerRef.current.getBoundingClientRect();
+    const currentX = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+    const currentY = Math.max(0, Math.min(e.clientY - rect.top, rect.height));
+
+    // Calculate bounds (handle dragging in any direction)
+    const x = Math.min(cropStart.x, currentX);
+    const y = Math.min(cropStart.y, currentY);
+    const width = Math.abs(currentX - cropStart.x);
+    const height = Math.abs(currentY - cropStart.y);
+
+    // Make it square (use the smaller dimension)
+    const size = Math.min(width, height);
+
+    setCropBounds({ x, y, width: size, height: size });
+  }, [isCropping, cropStart]);
+
+  const handleCropMouseUp = useCallback(() => {
+    setIsCropping(false);
+    setCropStart(null);
+  }, []);
+
+  // Convert display bounds to actual image bounds
+  const getActualBounds = useCallback((): CropBounds | null => {
+    if (!cropBounds || !cropContainerRef.current || !imageSize) return null;
+
+    const rect = cropContainerRef.current.getBoundingClientRect();
+    const scaleX = imageSize.width / rect.width;
+    const scaleY = imageSize.height / rect.height;
+
+    return {
+      x: Math.round(cropBounds.x * scaleX),
+      y: Math.round(cropBounds.y * scaleY),
+      width: Math.round(cropBounds.width * scaleX),
+      height: Math.round(cropBounds.height * scaleY),
+    };
+  }, [cropBounds, imageSize]);
 
   // Handle file selection
   const handleFileSelect = useCallback((file: File) => {
@@ -128,19 +212,39 @@ export default function IconsPage() {
       return;
     }
 
+    // For manual mode, require a crop selection
+    if (mode === 'manual') {
+      const actualBounds = getActualBounds();
+      if (!actualBounds || actualBounds.width < 10) {
+        setError('Please draw a selection box around the icon area first');
+        return;
+      }
+    }
+
     setLoading(true);
     setError(null);
 
     try {
+      // Build request body
+      const requestBody: Record<string, unknown> = {
+        image: uploadedImage,
+        mode: mode === 'manual' ? 'square' : mode, // Manual uses square mode with bounds
+        padding,
+        background,
+      };
+
+      // Add bounds for manual mode
+      if (mode === 'manual') {
+        const actualBounds = getActualBounds();
+        if (actualBounds) {
+          requestBody.bounds = actualBounds;
+        }
+      }
+
       const response = await fetch('/api/generate-icons', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          image: uploadedImage,
-          mode,
-          padding,
-          background,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await response.json();
@@ -257,12 +361,112 @@ export default function IconsPage() {
                 >
                   {uploadedImage ? (
                     <div className={styles.uploadPreviewContainer}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={uploadedImage}
-                        alt="Uploaded logo"
-                        className={styles.uploadPreview}
-                      />
+                      <div
+                        ref={cropContainerRef}
+                        style={{
+                          position: 'relative',
+                          cursor: mode === 'manual' ? 'crosshair' : 'default',
+                          userSelect: 'none',
+                        }}
+                        onMouseDown={handleCropMouseDown}
+                        onMouseMove={handleCropMouseMove}
+                        onMouseUp={handleCropMouseUp}
+                        onMouseLeave={handleCropMouseUp}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={uploadedImage}
+                          alt="Uploaded logo"
+                          className={styles.uploadPreview}
+                          draggable={false}
+                        />
+                        {/* Crop selection overlay */}
+                        {mode === 'manual' && cropBounds && cropBounds.width > 0 && (
+                          <>
+                            {/* Darkened areas outside selection */}
+                            <div
+                              style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                height: `${cropBounds.y}px`,
+                                background: 'rgba(0, 0, 0, 0.6)',
+                                pointerEvents: 'none',
+                              }}
+                            />
+                            <div
+                              style={{
+                                position: 'absolute',
+                                top: `${cropBounds.y}px`,
+                                left: 0,
+                                width: `${cropBounds.x}px`,
+                                height: `${cropBounds.height}px`,
+                                background: 'rgba(0, 0, 0, 0.6)',
+                                pointerEvents: 'none',
+                              }}
+                            />
+                            <div
+                              style={{
+                                position: 'absolute',
+                                top: `${cropBounds.y}px`,
+                                left: `${cropBounds.x + cropBounds.width}px`,
+                                right: 0,
+                                height: `${cropBounds.height}px`,
+                                background: 'rgba(0, 0, 0, 0.6)',
+                                pointerEvents: 'none',
+                              }}
+                            />
+                            <div
+                              style={{
+                                position: 'absolute',
+                                top: `${cropBounds.y + cropBounds.height}px`,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                background: 'rgba(0, 0, 0, 0.6)',
+                                pointerEvents: 'none',
+                              }}
+                            />
+                            {/* Selection border */}
+                            <div
+                              style={{
+                                position: 'absolute',
+                                top: `${cropBounds.y}px`,
+                                left: `${cropBounds.x}px`,
+                                width: `${cropBounds.width}px`,
+                                height: `${cropBounds.height}px`,
+                                border: '2px dashed #0ea5e9',
+                                boxShadow: '0 0 0 1px rgba(0, 0, 0, 0.3)',
+                                pointerEvents: 'none',
+                              }}
+                            />
+                          </>
+                        )}
+                        {/* Manual mode hint */}
+                        {mode === 'manual' && !cropBounds && (
+                          <div
+                            style={{
+                              position: 'absolute',
+                              top: '50%',
+                              left: '50%',
+                              transform: 'translate(-50%, -50%)',
+                              background: 'rgba(0, 0, 0, 0.7)',
+                              padding: '12px 20px',
+                              borderRadius: '8px',
+                              color: '#fff',
+                              fontSize: '13px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              pointerEvents: 'none',
+                            }}
+                          >
+                            <Crop size={16} />
+                            Click and drag to select icon area
+                          </div>
+                        )}
+                      </div>
                       <button
                         className={styles.removeImageButton}
                         onClick={(e) => {
@@ -294,7 +498,36 @@ export default function IconsPage() {
 
                 {error && <div className={styles.errorMessage}>{error}</div>}
 
-                {result?.detected_bounds && (
+                {/* Show manual crop bounds */}
+                {mode === 'manual' && cropBounds && cropBounds.width > 0 && (
+                  <div className={styles.boundsInfo}>
+                    <div className={styles.boundsLabel}>Selected Icon Bounds</div>
+                    {(() => {
+                      const actual = getActualBounds();
+                      return actual
+                        ? `x: ${actual.x}, y: ${actual.y}, ${actual.width}x${actual.height}px`
+                        : 'Calculating...';
+                    })()}
+                    <button
+                      onClick={() => setCropBounds(null)}
+                      style={{
+                        marginLeft: '12px',
+                        padding: '4px 8px',
+                        fontSize: '11px',
+                        background: 'rgba(255, 255, 255, 0.1)',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        borderRadius: '4px',
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Clear
+                    </button>
+                  </div>
+                )}
+
+                {/* Show detected bounds from auto mode */}
+                {result?.detected_bounds && mode === 'auto' && (
                   <div className={styles.boundsInfo}>
                     <div className={styles.boundsLabel}>Detected Icon Bounds</div>
                     x: {result.detected_bounds.x}, y: {result.detected_bounds.y},{' '}
