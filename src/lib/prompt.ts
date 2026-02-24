@@ -173,25 +173,25 @@ const BRAND_THEMES: Record<BrandTheme, BrandThemeDefinition> = {
     funnelists: {
         name: "Funnelists",
         colors: {
-            primary: ["cyan #0ea5e9", "teal #14b8a6", "blue #3b82f6"],
-            secondary: ["emerald green #10b981", "green accent lights"],
-            accent: ["subtle purple highlights acceptable"],
-            forbidden: ["no red", "no orange", "no yellow", "no pink", "no warm colors"],
-            background: "dark black background, navy #0a0a0f, deep space black"
+            primary: ["electric cyan #00FFFF", "neon blue #0ea5e9", "deep blue #3b82f6"],
+            secondary: ["lime green #39FF14", "emerald #10b981", "neon green accent lights"],
+            accent: ["magenta #FF00FF", "neon purple highlights", "hot pink accents"],
+            forbidden: ["no red", "no orange", "no yellow", "no warm colors", "no white backgrounds"],
+            background: "pitch black #000000 to deep navy #0A0A1F, infinite depth dark space"
         },
         styleKeywords: [
-            "cyberpunk neon data visualization",
-            "dense scene packed with floating holographic screens and glowing icons",
-            "bright vibrant neon cyan and emerald glow on pitch black background",
-            "circuit board platform with glowing traces",
-            "isometric perspective sci-fi command center",
-            "particle effects and volumetric light rays",
-            "multiple floating dashboards showing charts and data",
-            "intense neon bloom lighting"
+            "futuristic cyberpunk neon, hyper-realistic but slightly surreal",
+            "translucent glass-like holograms with glowing edges and microchip traces visible inside",
+            "cinematic volumetric god rays, depth-of-field bokeh lights, inner glows",
+            "holographic Salesforce cloud logos, neural network cores, floating dashboard interfaces",
+            "flowing neon data streams, pulsating energy, quantum particle connections",
+            "isometric 3D platforms on dark circuit board grids with neon traces",
+            "ultra-detailed 8K Octane Render quality, sharp vibrant professional",
+            "dense scene with floating holographic projections in dark space"
         ],
         mood: ["futuristic", "high-tech", "cyberpunk", "cutting-edge AI", "powerful"],
-        visualStyle: "cyberpunk neon data visualization scene, dense with floating holographic screens, bright glowing cyan and emerald neon on pitch black, isometric sci-fi command center aesthetic",
-        avoidKeywords: ["cartoon", "hand-drawn", "vintage", "retro", "watercolor", "sketchy", "warm colors", "friendly", "playful", "photorealism", "photography", "realistic photo", "minimalist", "clean", "simple", "flat design", "muted colors"]
+        visualStyle: "futuristic cyberpunk neon scene, hyper-realistic but slightly surreal, translucent glass holograms with glowing edges, cinematic volumetric god rays and bokeh lights, ultra-detailed 8K Octane Render quality on pitch black background",
+        avoidKeywords: ["cartoon", "hand-drawn", "vintage", "retro", "watercolor", "sketchy", "warm colors", "friendly", "playful", "flat design", "muted colors", "simple", "minimalist", "soft lighting", "pastel"]
     },
     salesforce: {
         name: "Salesforce",
