@@ -107,7 +107,7 @@ const ASSET_TYPE_TEMPLATES: Record<string, AssetTypeTemplate> = {
         negatives: ["photorealism", "people", "faces", "busy backgrounds", "organic textures", "hand-drawn elements"]
     },
     hero_image: {
-        style: "Cinematic, atmospheric, dramatic lighting, professional photography style, stylized illustration",
+        style: "Atmospheric, dramatic lighting, highly detailed digital art",
         composition: "Wide aspect ratio, subject positioned for text overlay space, depth of field, rule of thirds",
         technical: "High resolution, 4K quality, suitable for web hero section, wide cinematic view",
         negatives: ["cluttered composition", "multiple focal points", "small details", "busy patterns"]
@@ -180,18 +180,18 @@ const BRAND_THEMES: Record<BrandTheme, BrandThemeDefinition> = {
             background: "dark black background, navy #0a0a0f, deep space black"
         },
         styleKeywords: [
-            "futuristic tech aesthetic",
-            "glowing neon lines",
-            "circuit board patterns",
-            "holographic elements",
-            "isometric 3D platforms",
-            "floating in dark space",
-            "cyberpunk data visualization",
-            "enterprise AI aesthetic"
+            "isometric 3D technical illustration",
+            "glowing cyan and emerald neon accents",
+            "circuit board platform base",
+            "holographic floating elements",
+            "dark space background with depth",
+            "volumetric light rays and bloom",
+            "octane render quality",
+            "enterprise AI visualization"
         ],
         mood: ["innovative", "professional", "enterprise-grade", "cutting-edge AI", "powerful"],
-        visualStyle: "isometric 3D tech illustration with glowing elements on dark background",
-        avoidKeywords: ["cartoon", "hand-drawn", "vintage", "retro", "watercolor", "sketchy", "warm colors", "friendly", "playful"]
+        visualStyle: "isometric 3D tech illustration with glowing cyan and emerald elements on dark background, octane render quality",
+        avoidKeywords: ["cartoon", "hand-drawn", "vintage", "retro", "watercolor", "sketchy", "warm colors", "friendly", "playful", "photorealism", "photography", "realistic photo"]
     },
     salesforce: {
         name: "Salesforce",
@@ -352,15 +352,20 @@ const ASSET_SET_COMPOSITION = "composition with all key elements concentrated in
 function formatForDalle(parts: PromptParts): StructuredPromptResult {
     const brand = parts.brand;
 
-    const prompt = `Create a ${parts.style} image showing ${parts.subject}.
+    // Lead with brand visual style so DALL-E prioritizes it over generic asset template style
+    const styleInstruction = brand.visualStyle
+        ? `${brand.visualStyle}, ${parts.style}`
+        : parts.style;
+
+    const prompt = `Create a ${styleInstruction} image showing ${parts.subject}.
+
+${brand.styleKeywords.length > 0 ? `Style: ${brand.styleKeywords.slice(0, 6).join(", ")}.` : ''}
 
 The image should have ${parts.composition}.
 
 ${parts.details ? `Include these elements: ${parts.details}.` : ''}
 
 Color palette: Use ${brand.colors.primary.join(", ")} as the primary colors. ${brand.colors.secondary.length > 0 ? `Accent with ${brand.colors.secondary.join(", ")}.` : ''} The background should be ${brand.colors.background}.
-
-Visual style: ${brand.visualStyle}. Keywords: ${brand.styleKeywords.slice(0, 5).join(", ")}.
 
 Mood: ${brand.mood.join(", ")}.
 
