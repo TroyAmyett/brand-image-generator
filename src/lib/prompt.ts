@@ -180,18 +180,18 @@ const BRAND_THEMES: Record<BrandTheme, BrandThemeDefinition> = {
             background: "dark black background, navy #0a0a0f, deep space black"
         },
         styleKeywords: [
-            "isometric 3D technical illustration",
-            "glowing cyan and emerald neon accents",
-            "circuit board platform base",
-            "holographic floating elements",
-            "dark space background with depth",
-            "volumetric light rays and bloom",
-            "octane render quality",
-            "enterprise AI visualization"
+            "cyberpunk neon data visualization",
+            "dense scene packed with floating holographic screens and glowing icons",
+            "bright vibrant neon cyan and emerald glow on pitch black background",
+            "circuit board platform with glowing traces",
+            "isometric perspective sci-fi command center",
+            "particle effects and volumetric light rays",
+            "multiple floating dashboards showing charts and data",
+            "intense neon bloom lighting"
         ],
-        mood: ["innovative", "professional", "enterprise-grade", "cutting-edge AI", "powerful"],
-        visualStyle: "isometric 3D tech illustration with glowing cyan and emerald elements on dark background, octane render quality",
-        avoidKeywords: ["cartoon", "hand-drawn", "vintage", "retro", "watercolor", "sketchy", "warm colors", "friendly", "playful", "photorealism", "photography", "realistic photo"]
+        mood: ["futuristic", "high-tech", "cyberpunk", "cutting-edge AI", "powerful"],
+        visualStyle: "cyberpunk neon data visualization scene, dense with floating holographic screens, bright glowing cyan and emerald neon on pitch black, isometric sci-fi command center aesthetic",
+        avoidKeywords: ["cartoon", "hand-drawn", "vintage", "retro", "watercolor", "sketchy", "warm colors", "friendly", "playful", "photorealism", "photography", "realistic photo", "minimalist", "clean", "simple", "flat design", "muted colors"]
     },
     salesforce: {
         name: "Salesforce",
