@@ -5,16 +5,19 @@ const AGENTPM_SUPABASE_URL = process.env.NEXT_PUBLIC_AGENTPM_SUPABASE_URL || 'ht
 const AGENTPM_SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_AGENTPM_SUPABASE_ANON_KEY || '';
 
 // Validate that the anon key is configured
-if (typeof window !== 'undefined' && (!AGENTPM_SUPABASE_ANON_KEY || AGENTPM_SUPABASE_ANON_KEY.includes('placeholder'))) {
-  console.warn(
-    '[Supabase] NEXT_PUBLIC_AGENTPM_SUPABASE_ANON_KEY is not configured. ' +
-    'Get the anon key from AgentPM Supabase dashboard: Settings > API > Project API keys'
-  );
+if (!AGENTPM_SUPABASE_ANON_KEY || AGENTPM_SUPABASE_ANON_KEY.includes('placeholder')) {
+  if (typeof window !== 'undefined') {
+    console.warn(
+      '[Supabase] NEXT_PUBLIC_AGENTPM_SUPABASE_ANON_KEY is not configured. ' +
+      'Get the anon key from AgentPM Supabase dashboard: Settings > API > Project API keys'
+    );
+  }
 }
 
 // Create Supabase client with shared auth storage key
-// All Funnelists apps must use the same storageKey for session sharing
-export const agentpmClient: SupabaseClient = createClient(AGENTPM_SUPABASE_URL, AGENTPM_SUPABASE_ANON_KEY, {
+// Use a dummy key during build if env var is not set (Canvas works without Supabase for image generation)
+const safeAnonKey = AGENTPM_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.build-placeholder';
+export const agentpmClient: SupabaseClient = createClient(AGENTPM_SUPABASE_URL, safeAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
