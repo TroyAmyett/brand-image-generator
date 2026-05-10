@@ -1,4 +1,5 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { getFunnelistsAuthOptions } from './funnelists-auth';
 
 // AgentPM Identity Service connection (shared Supabase project)
 const AGENTPM_SUPABASE_URL = process.env.NEXT_PUBLIC_AGENTPM_SUPABASE_URL || 'https://ilxgrlnwjtdpikpjocll.supabase.co';
@@ -14,16 +15,12 @@ if (!AGENTPM_SUPABASE_ANON_KEY || AGENTPM_SUPABASE_ANON_KEY.includes('placeholde
   }
 }
 
-// Create Supabase client with shared auth storage key
-// Use a dummy key during build if env var is not set (Canvas works without Supabase for image generation)
+// Cross-subdomain SSO: getFunnelistsAuthOptions pins storageKey='funnelists-auth'
+// and installs the apex-cookie adapter (.funnelists.com), so the session is
+// shared with agentpm/radar/etc. See packages/auth/src/client/.
 const safeAnonKey = AGENTPM_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.build-placeholder';
 export const agentpmClient: SupabaseClient = createClient(AGENTPM_SUPABASE_URL, safeAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
-    storageKey: 'funnelists-auth', // Shared across all Funnelists apps
-  },
+  auth: getFunnelistsAuthOptions(),
 });
 
 // Get the redirect URL for OAuth callbacks
