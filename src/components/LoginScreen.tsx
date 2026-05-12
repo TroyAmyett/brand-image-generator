@@ -1,17 +1,66 @@
 /**
- * Funnelists shared LoginScreen — INLINE COPY.
+ * Funnelists shared LoginScreen — REFERENCE TEMPLATE.
  *
- * This file is intentionally duplicated across every Funnelists product.
- * Products are standalone-first at the build layer — no `@funnelists/auth`
- * import. The reference template lives at `packages/auth/src/components/`.
+ * Funnelists products are invite-only / post-purchase, so this component has
+ * NO signup affordance. New users get in via a separate invite-acceptance
+ * page (typically `/signup?invite=<token>`).
  *
- * KEEP THIS FILE IDENTICAL across products. Visual + behavioral parity is
- * what makes the suite feel cohesive. Per-product variation goes in the
- * <LoginScreen /> props at the call site (appName, Icon, OAuth handlers).
+ * This file is a *template*. Copy it into each Funnelists product as
+ * `src/components/LoginScreen.tsx` (or wherever fits) — do NOT import from
+ * `@funnelists/auth`. Standalone-first: products build with no Funnelists
+ * deps at the import layer. See:
+ *   - packages/auth/src/client/factory.ts (auth options helper, also a template)
+ *   - feedback_standalone_first_products.md (memory)
  *
- * Funnelists is invite-only — this component has NO signup affordance.
- * New users get in via a separate invite-acceptance page (typically
- * `/signup?invite=<token>`).
+ * Usage in a product:
+ *   import { Bot } from 'lucide-react'
+ *   import { LoginScreen } from './LoginScreen'
+ *   import { supabase } from '@/lib/supabase'
+ *
+ *   <LoginScreen
+ *     appName="AgentPM"
+ *     tagline="AI-powered project management"
+ *     Icon={Bot}
+ *     onSignInWithPassword={async (email, password) => {
+ *       const { error } = await supabase.auth.signInWithPassword({ email, password })
+ *       return { error: error?.message }
+ *     }}
+ *     onSignInWithGoogle={async () => {
+ *       const { error } = await supabase.auth.signInWithOAuth({
+ *         provider: 'google',
+ *         options: { redirectTo: `${window.location.origin}/auth/callback` },
+ *       })
+ *       return { error: error?.message }
+ *     }}
+ *     onSignInWithMicrosoft={async () => {
+ *       const { error } = await supabase.auth.signInWithOAuth({
+ *         provider: 'azure',     // Supabase calls it 'azure' but covers
+ *         options: {              // both personal MS accounts + Azure AD
+ *           scopes: 'email',
+ *           redirectTo: `${window.location.origin}/auth/callback`,
+ *         },
+ *       })
+ *       return { error: error?.message }
+ *     }}
+ *     onResetPassword={async (email) => {
+ *       const { error } = await supabase.auth.resetPasswordForEmail(email, {
+ *         redirectTo: `${window.location.origin}/reset-password`,
+ *       })
+ *       return { error: error?.message }
+ *     }}
+ *   />
+ *
+ * Deps required in the product:
+ *   - react
+ *   - lucide-react (icons)
+ *   - Tailwind CSS v3+ configured with the funnelists palette
+ *
+ * Branding contract — keep consistent across products:
+ *   - Background:  #0a0a0f (Funnelists dark)
+ *   - Primary:     cyan-500 (#0ea5e9)
+ *   - Card:        white/[0.02] with white/[0.06] border
+ *   - Inputs:      #1a1a24 background, white/[0.06] border, sky-500 focus
+ *   - Font:        inherit (let the product set this)
  */
 
 import { useState, type ComponentType, type FormEvent } from 'react'
@@ -31,7 +80,7 @@ export interface LoginScreenProps {
   appName: string
   /** Optional tagline shown below the headline. */
   tagline?: string
-  /** Icon component from lucide-react. */
+  /** Icon component from lucide-react (or any component matching this shape). */
   Icon: ComponentType<{ className?: string; size?: number | string }>
   /** Sign in with email + password. Return `{ error }` on failure. */
   onSignInWithPassword: (
@@ -48,8 +97,16 @@ export interface LoginScreenProps {
   onSignInWithMicrosoft?: () => Promise<{ error?: string }>
   /** Send a password-reset email. */
   onResetPassword: (email: string) => Promise<{ error?: string }>
-  /** Optional: footer caption under the card. */
+  /** Optional: footer caption under the card (e.g., 'AgentPM - AI agents'). */
   footer?: string
+  /**
+   * Optional per-product or per-Account override for the contact info shown
+   * in the invite-only footer and in the "not authorized" error message.
+   * When omitted, a generic "contact your administrator" message is shown.
+   * Future per-Account lookup (by email domain) will populate these.
+   */
+  contactEmail?: string
+  contactPhone?: string
 }
 
 export function LoginScreen({
@@ -61,6 +118,8 @@ export function LoginScreen({
   onSignInWithMicrosoft,
   onResetPassword,
   footer,
+  contactEmail,
+  contactPhone,
 }: LoginScreenProps) {
   const [mode, setMode] = useState<AuthMode>('signin')
   const [email, setEmail] = useState('')
@@ -87,6 +146,29 @@ export function LoginScreen({
     setPassword('')
   }
 
+  // Translate Supabase's signups-disabled / not-allowed errors into a clear,
+  // invite-only-friendly message. Falls through unmodified for genuine errors
+  // like bad password, network failures, etc.
+  const friendlifyError = (raw: string): string => {
+    const lower = raw.toLowerCase()
+    if (
+      lower.includes('signups not allowed') ||
+      lower.includes('signup is disabled') ||
+      lower.includes('user not allowed') ||
+      lower.includes('not authorized')
+    ) {
+      const contact: string[] = []
+      if (contactEmail) contact.push(contactEmail)
+      if (contactPhone) contact.push(contactPhone)
+      const where =
+        contact.length > 0
+          ? `your administrator at ${contact.join(' or ')}`
+          : 'your administrator'
+      return `This account isn't authorized for ${appName}. Contact ${where} to request access.`
+    }
+    return raw
+  }
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError(null)
@@ -96,14 +178,14 @@ export function LoginScreen({
       if (mode === 'signin') {
         const result = await onSignInWithPassword(email, password)
         if (result.error) {
-          setError(result.error)
+          setError(friendlifyError(result.error))
         } else if (returnUrl) {
           window.location.href = returnUrl
         }
       } else {
         const result = await onResetPassword(email)
         if (result.error) {
-          setError(result.error)
+          setError(friendlifyError(result.error))
         } else {
           setSuccessMessage(
             `Password reset email sent. Check ${email} for the link.`,
@@ -126,12 +208,12 @@ export function LoginScreen({
     setOauthLoading(provider)
     try {
       const result = await handler()
-      if (result.error) setError(result.error)
+      if (result.error) setError(friendlifyError(result.error))
       // On success, Supabase redirects — we won't return here.
     } catch (err) {
       setError(
         err instanceof Error
-          ? err.message
+          ? friendlifyError(err.message)
           : `${provider === 'google' ? 'Google' : 'Microsoft'} sign-in failed`,
       )
     } finally {
@@ -159,7 +241,7 @@ export function LoginScreen({
             )}
             {mode === 'reset' && (
               <p className="text-sm text-white/60 mt-1.5">
-                We&apos;ll email you a reset link.
+                We'll email you a reset link.
               </p>
             )}
           </div>
@@ -302,14 +384,41 @@ export function LoginScreen({
           {/* Invite-only notice (always visible on signin mode) */}
           {mode === 'signin' && (
             <p className="text-center text-xs text-white/40 mt-6">
-              {appName} is invite-only. Need access?{' '}
-              <a
-                href="mailto:troy@funnelists.com"
-                className="text-white/60 hover:text-white/90 transition-colors"
-              >
-                Get in touch
-              </a>
-              .
+              {appName} is invite-only.{' '}
+              {contactEmail ? (
+                <>
+                  Need access?{' '}
+                  <a
+                    href={`mailto:${contactEmail}`}
+                    className="text-white/60 hover:text-white/90 transition-colors"
+                  >
+                    {contactEmail}
+                  </a>
+                  {contactPhone && (
+                    <>
+                      {' '}or{' '}
+                      <a
+                        href={`tel:${contactPhone}`}
+                        className="text-white/60 hover:text-white/90 transition-colors"
+                      >
+                        {contactPhone}
+                      </a>
+                    </>
+                  )}
+                </>
+              ) : contactPhone ? (
+                <>
+                  Need access?{' '}
+                  <a
+                    href={`tel:${contactPhone}`}
+                    className="text-white/60 hover:text-white/90 transition-colors"
+                  >
+                    {contactPhone}
+                  </a>
+                </>
+              ) : (
+                <>Need access? Contact your administrator.</>
+              )}
             </p>
           )}
         </div>
