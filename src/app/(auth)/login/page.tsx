@@ -28,23 +28,8 @@ export default function LoginPage() {
         router.replace('/');
         return {};
       }}
-      onSignInWithGoogle={async () => {
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: { redirectTo: `${window.location.origin}/auth/callback` },
-        });
-        return { error: error?.message };
-      }}
-      onSignInWithMicrosoft={async () => {
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: 'azure',
-          options: {
-            scopes: 'email',
-            redirectTo: `${window.location.origin}/auth/callback`,
-          },
-        });
-        return { error: error?.message };
-      }}
+      // Google + Microsoft OAuth temporarily hidden — providers not yet
+      // configured in Supabase. Task: ae8717f1.
       onResetPassword={async (email) => {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/auth/reset-password`,
