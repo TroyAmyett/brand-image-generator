@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+.vercel
+
+# canvas-hero-pipeline output (generated frame sequences)
+/hero-out/
+/tmp-sample/
+
+# generated image artifacts (one-off API outputs)
+/data/generated/

@@ -6,16 +6,21 @@
     "dev": "next dev -p 3002",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepare": "husky"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
+    "@sparticuz/chromium": "^148.0.0",
     "@supabase/supabase-js": "^2.90.1",
     "html2canvas": "^1.4.1",
     "lucide-react": "^0.562.0",
     "next": "16.0.10",
     "openai": "^6.10.0",
     "png-to-ico": "^3.0.1",
+    "puppeteer-core": "^25.0.4",
     "react": "19.2.1",
     "react-dom": "19.2.1",
     "sharp": "^0.34.5"
@@ -28,6 +33,9 @@
     "eslint": "^9",
     "eslint-config-next": "16.0.10",
     "form-data": "^4.0.5",
-    "typescript": "^5"
+    "husky": "^9.0.0",
+    "tsx": "^4.22.3",
+    "typescript": "^5",
+    "vitest": "^3.2.4"
   }
 }

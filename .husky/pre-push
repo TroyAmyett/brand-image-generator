@@ -1,0 +1,3 @@
+echo "Pre-push: Running build check..."
+
+npm run build
