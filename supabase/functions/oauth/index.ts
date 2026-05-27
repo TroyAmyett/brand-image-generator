@@ -35,11 +35,17 @@ async function hashSecret(secret: string): Promise<string> {
 }
 
 // Validate client registration
+interface ToolRegistration {
+  callback_url: string;
+  client_secret_hash?: string;
+  name?: string;
+}
+
 async function validateClient(
   clientId: string,
   redirectUri: string,
   clientSecret?: string
-): Promise<{ valid: boolean; error?: string; registration?: any }> {
+): Promise<{ valid: boolean; error?: string; registration?: ToolRegistration }> {
   const { data: registration, error } = await supabase
     .from("tool_registrations")
     .select("*")

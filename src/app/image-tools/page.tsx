@@ -254,7 +254,8 @@ async function prepareForOutpaint(
   const img = await loadImage(dataUrl);
   let w = img.width;
   let h = img.height;
-  let { left, right, top, bottom, newW, newH } = ext;
+  const { newW, newH } = ext;
+  let { left, right, top, bottom } = ext;
 
   // Scale down if resulting image would exceed 4MP or any extension exceeds 2048
   const maxPixels = 4_000_000;

@@ -241,7 +241,7 @@ export function LoginScreen({
             )}
             {mode === 'reset' && (
               <p className="text-sm text-white/60 mt-1.5">
-                We'll email you a reset link.
+                We&apos;ll email you a reset link.
               </p>
             )}
           </div>
