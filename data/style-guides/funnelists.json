@@ -6,22 +6,18 @@
   "colors": {
     "primary": [
       {
-        "hex": "#0ea5e9",
-        "name": "Cyan"
+        "hex": "#3BB4E5",
+        "name": "Funnelists Blue"
       },
       {
-        "hex": "#14b8a6",
-        "name": "Teal"
-      },
-      {
-        "hex": "#3b82f6",
-        "name": "Blue"
+        "hex": "#22C55E",
+        "name": "Accent Green"
       }
     ],
     "secondary": [
       {
-        "hex": "#10b981",
-        "name": "Emerald Green"
+        "hex": "#3DBDAC",
+        "name": "Teal"
       }
     ],
     "accent": [
@@ -37,11 +33,11 @@
       "no pink",
       "no warm colors"
     ],
-    "background": "dark black background, navy #0a0a0f, deep space black"
+    "background": "pure black #0A0A0A dark background, deep space black"
   },
   "typography": {
-    "headingFont": "Inter",
-    "bodyFont": "Inter",
+    "headingFont": "Satoshi",
+    "bodyFont": "Satoshi",
     "fontWeights": [
       "400",
       "500",
@@ -80,6 +76,6 @@
     ]
   },
   "createdAt": "2025-01-01T00:00:00.000Z",
-  "updatedAt": "2025-01-01T00:00:00.000Z",
+  "updatedAt": "2026-06-07T00:00:00.000Z",
   "accountId": "default"
 }
